@@ -12,9 +12,10 @@ import { useLongPress } from '../hooks/useLongPress';
 import { MessageItem } from './MessageItem';
 import { SelectionToolbar } from './SelectionToolbar';
 import { ConfirmModal } from './ConfirmModal';
-import { LANGUAGE_CONTROL_SYSTEM_MESSAGE, NAME_AGNOSTIC_NOTE, GATING_CONFIG, GIFT_ITEMS, HEARTS_PACKS } from '../constants';
+import { LANGUAGE_CONTROL_SYSTEM_MESSAGE, NAME_AGNOSTIC_NOTE, GATING_CONFIG, GIFT_ITEMS, HEARTS_PACKS, CONVERSION_POOL } from '../constants';
 import { PERSONA_PROMPTS, FALLBACK_REPLIES } from '../src/config/personaConfig';
 import { geminiRotator } from '../utils/ai-rotator';
+import { detectIntent } from '../utils/intentDetector';
 
 interface ChatScreenProps {
   persona: Persona;
@@ -262,6 +263,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chatSession, setChatSession] = useState<any>(null);
+  const teasesSentRef = useRef(0); // Max 2 per session frequency control
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isRecording, setIsRecording] = useState(false);
   const lastInteractionRef = useRef<number>(Date.now());
@@ -378,6 +381,9 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
     const isPaid = profile.subscription !== 'free';
     const userMode = isPaid ? 'PREMIUM' : 'FREE';
 
+    // --- TASK: INTENT CLASSIFICATION ---
+    const intent = detectIntent(text);
+
     // --- TASK 2: MEMORY ILLUSION ---
     const currentTime = new Date();
     const hour = currentTime.getHours();
@@ -418,8 +424,9 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
         const model = genAI.getGenerativeModel({
           model: "gemini-1.5-flash",
           systemInstruction: memoryHeader + "\n" + systemPrompt + "\n" + NAME_AGNOSTIC_NOTE +
+            `\n\nCURRENT USER INTENT: [${intent}]` +
             `\n\nCURRENT SUMMARY: ${personaSummary}` +
-            `\n\nCURRENT USER STATUS: The user is in ${userMode} mode. Follow ${userMode} response rules strictly.`
+            `\n\nCURRENT USER STATUS: The user is in ${userMode} mode. Follow ${userMode} and intent-based response rules strictly.`
         });
 
         const chat = model.startChat({
@@ -437,7 +444,6 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
         // --- Summarization Trigger ---
         if (messages.length >= 10 && messages.length % 10 === 0) {
           const summaryPrompt = `Provide a 2-line emotional summary of our recent conversation. Focused on user's current vibe and key topic.`;
-          // Passing full chat context for a better summary
           const sumResult = await model.generateContent({
             contents: [...history, { role: 'model', parts: [{ text: responseText }] }, { role: 'user', parts: [{ text: summaryPrompt }] }]
           });
@@ -445,7 +451,25 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
           storage.saveSummary(persona.id, newSummary);
         }
 
-        return responseText;
+        let finalResponseText = responseText;
+
+        // --- TASK 4: SAFE CONVERSION INJECTION ---
+        const isFree = !isPaid;
+        const hasEnoughContext = messages.length > 5;
+        const withinFrequencyLimit = teasesSentRef.current < 2;
+        const isEmotionalIntent = intent === 'EMOTIONAL';
+
+        // Context-specific block check (Task 4)
+        const blockKeywords = ['paisa', 'salary', 'job', 'health', 'hospital', 'bimari', 'death', 'tension', 'problem'];
+        const isContextSafe = !blockKeywords.some(word => text.toLowerCase().includes(word));
+
+        if (isFree && isEmotionalIntent && hasEnoughContext && withinFrequencyLimit && isContextSafe && Math.random() > 0.6) {
+          const conversionMsg = CONVERSION_POOL[Math.floor(Math.random() * CONVERSION_POOL.length)];
+          finalResponseText += "\n\n" + conversionMsg;
+          teasesSentRef.current += 1;
+        }
+
+        return finalResponseText;
 
       } catch (err: any) {
         const errorReason = err.message || "Gemini Error";
