@@ -249,6 +249,29 @@ export const storage = {
     profile.lastActive = new Date().toISOString();
     storage.saveProfile(profile);
     return profile.messageCountToday;
+  },
+
+  // --- TASK 2: MEMORY ILLUSION ---
+  getMemory: (companionId: string | number) => {
+    try {
+      const raw = localStorage.getItem(`memory_${companionId}`);
+      if (raw) return JSON.parse(raw);
+    } catch (e) { }
+    return { lastMood: 'neutral', lastTopic: 'none', preferredTime: 'unknown' };
+  },
+
+  saveMemory: (companionId: string | number, data: { lastMood?: string, lastTopic?: string, preferredTime?: string }) => {
+    const current = storage.getMemory(companionId);
+    localStorage.setItem(`memory_${companionId}`, JSON.stringify({ ...current, ...data }));
+  },
+
+  // --- TASK 3: TOKEN CONTROL ---
+  getSummary: (companionId: string | number): string => {
+    return localStorage.getItem(`persona_summary_${companionId}`) || '';
+  },
+
+  saveSummary: (companionId: string | number, summary: string) => {
+    localStorage.setItem(`persona_summary_${companionId}`, summary);
   }
 };
 

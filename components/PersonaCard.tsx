@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Persona } from '../types';
 import { GoogleGenAI } from "@google/genai";
-import { Loader2, AlertTriangle, RefreshCw, MoreVertical, Search, RotateCcw, Trash2, Pin, Palette, X } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCw, MoreVertical, RotateCcw, Trash2, Pin, Palette, X } from 'lucide-react';
 import { storage } from '../utils/storage';
 import { useGating } from '../src/hooks/useGating';
 import { Lock } from 'lucide-react';
@@ -203,13 +203,6 @@ const PersonaCard: React.FC<PersonaCardProps> = ({
             ref={menuRef}
             className="absolute right-0 mt-2 w-52 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/60 p-2 animate-in fade-in zoom-in-95 origin-top-right overflow-hidden"
           >
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleChat(e); }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-bold text-[#4A2040] hover:bg-[#FF9ACB]/10 rounded-xl transition-colors"
-            >
-              <Search size={14} className="text-[#FF9ACB]" />
-              Search Conversations
-            </button>
             <button
               className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-bold text-[#4A2040] hover:bg-indigo-50 rounded-xl transition-colors"
               onClick={(e) => { e.stopPropagation(); alert('Theme customized for this companion!'); setShowMenu(false); }}

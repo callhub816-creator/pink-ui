@@ -150,9 +150,6 @@ const PersonaProfileModal: React.FC<PersonaProfileModalProps> = ({
             >
               <Trash2 size={16} /> Clear Chat History
             </button>
-            <button className="flex items-center gap-2 text-[#8E6A88] text-sm font-medium hover:text-[#B28DFF] transition-colors">
-              <Share2 size={16} /> Share Profile
-            </button>
           </div>
         </div>
 

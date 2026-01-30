@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Persona, ConnectionLevel } from '../types';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { ArrowLeft, Phone, Mic, Send, Heart, User, AlertCircle, Check, CheckCheck, Palette, X, Sparkles, Reply, Trash2, RefreshCw, Lock as LockIcon, Gift as GiftIcon, PlusCircle, Zap, Search } from 'lucide-react';
+import { ArrowLeft, Phone, Mic, Send, Heart, User, AlertCircle, Check, CheckCheck, Palette, X, Sparkles, Reply, Trash2, RefreshCw, Lock as LockIcon, Gift as GiftIcon, PlusCircle, Zap } from 'lucide-react';
 import { storage } from '../utils/storage';
 import { shouldSwitchToPureEnglish, shouldSwitchToPureHindi } from '../utils/languageDetection';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -261,8 +261,6 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
   const [chatSession, setChatSession] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -378,28 +376,50 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
     setIsTyping(true);
     const startTime = Date.now();
     const isPaid = profile.subscription !== 'free';
+    const userMode = isPaid ? 'PREMIUM' : 'FREE';
 
-    const performAiCall = async (retryCount: number = 0): Promise<string> => {
+    // --- TASK 2: MEMORY ILLUSION ---
+    const currentTime = new Date();
+    const hour = currentTime.getHours();
+    const preferredTime = hour > 21 || hour < 5 ? "late_night" : "day";
+    const userMemory = storage.getMemory(persona.id);
+
+    const memoryHeader = `
+--------------------------------
+MEMORY HEADER (FOR YOUR CONTEXT ONLY)
+--------------------------------
+User usually chats at ${userMemory.preferredTime || preferredTime}.
+Last topic: ${userMemory.lastTopic || 'None'}.
+Last emotional tone: ${userMemory.lastMood || 'Neutral'}.
+Reference subtly if relevant. Do NOT reveal you are reading data.
+      `;
+
+    // --- TASK 3: TOKEN CONTROL ---
+    const slidingWindow = messages.slice(-12).filter(m => !m.isError);
+    const personaSummary = storage.getSummary(persona.id);
+
+    const performAiCall = async (aiRetryCount: number = 0): Promise<string> => {
       const keyState = geminiRotator.getKey();
       if (!keyState) {
         throw new Error("Missing Gemini API Key");
       }
 
-      const historyDepth = isPaid ? 15 : 8;
       const systemPrompt = PERSONA_PROMPTS[persona.name] || (LANGUAGE_CONTROL_SYSTEM_MESSAGE + "\n" + persona.basePrompt);
 
-      const history = messages.slice(-historyDepth).filter(m => !m.isError).map(m => ({
+      const history = slidingWindow.map(m => ({
         role: m.sender === 'user' ? "user" : "model",
         parts: [{ text: m.text }],
       }));
 
       try {
-        console.log(`[CallHub] Calling Gemini | Key Index: ${keyState.index} | Attempt: ${retryCount + 1}`);
+        console.log(`[CallHub] Gemini Call | Mode: ${userMode} | Key Index: ${keyState.index}`);
 
         const genAI = new GoogleGenerativeAI(keyState.value);
         const model = genAI.getGenerativeModel({
           model: "gemini-1.5-flash",
-          systemInstruction: systemPrompt + "\n" + NAME_AGNOSTIC_NOTE + "\nIMPORTANT: Stay in character. Use natural Hinglish. Keep it 1-3 sentences."
+          systemInstruction: memoryHeader + "\n" + systemPrompt + "\n" + NAME_AGNOSTIC_NOTE +
+            `\n\nCURRENT SUMMARY: ${personaSummary}` +
+            `\n\nCURRENT USER STATUS: The user is in ${userMode} mode. Follow ${userMode} response rules strictly.`
         });
 
         const chat = model.startChat({
@@ -412,16 +432,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
 
         const result = await chat.sendMessage(text);
         const response = await result.response;
-        return response.text();
+        const responseText = response.text();
+
+        // --- Summarization Trigger ---
+        if (messages.length >= 10 && messages.length % 10 === 0) {
+          const summaryPrompt = `Provide a 2-line emotional summary of our recent conversation. Focused on user's current vibe and key topic.`;
+          // Passing full chat context for a better summary
+          const sumResult = await model.generateContent({
+            contents: [...history, { role: 'model', parts: [{ text: responseText }] }, { role: 'user', parts: [{ text: summaryPrompt }] }]
+          });
+          const newSummary = (await sumResult.response).text();
+          storage.saveSummary(persona.id, newSummary);
+        }
+
+        return responseText;
 
       } catch (err: any) {
         const errorReason = err.message || "Gemini Error";
         console.warn(`[CallHub] Gemini Error: ${errorReason}`);
-
         geminiRotator.rotate(errorReason);
-
-        if (retryCount < 1 && geminiRotator.getAvailableKeysCount() > 1) {
-          return await performAiCall(retryCount + 1);
+        if (aiRetryCount < 1 && geminiRotator.getAvailableKeysCount() > 1) {
+          return await performAiCall(aiRetryCount + 1);
         }
         throw err;
       }
@@ -461,6 +492,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
 
         setMessages(prev => [...prev, modelMsg]);
         storage.saveMessage(persona.id, { ...modelMsg, timestamp: modelMsg.timestamp.toISOString() });
+
+        // Update Memory
+        storage.saveMemory(persona.id, {
+          lastMood: responseText.length > 150 ? 'Deeply connected' : 'Warm',
+          lastTopic: text.substring(0, 30),
+          preferredTime: new Date().getHours() > 21 || new Date().getHours() < 5 ? "late_night" : "day"
+        });
+
         lastInteractionRef.current = Date.now();
       }
     } catch (err: any) {
@@ -519,11 +558,6 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
     return () => clearInterval(interval);
   }, [isTyping, messages.length, persona.id, persona.name, profile.sessionsCount]);
 
-  const filteredMessages = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return q ? messages.filter(m => m.text.toLowerCase().includes(q)) : messages;
-  }, [messages, searchQuery]);
-
   const { isSelectMode, enterSelectMode, toggleSelection, isSelected } = useSelection();
   const { deleteMessages, undoDelete, undoTimeLeft, deletedItems } = useDeleteWithUndo((ids) => {
     setMessages(prev => prev.filter(m => !ids.includes(m.id)));
@@ -553,8 +587,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
             >
               <ArrowLeft size={24} />
             </button>
-            <div className="relative cursor-pointer" onClick={() => setShowVault(true)}>
-              <img src={avatarUrl || persona.avatarUrl} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md" alt={persona.name} />
+            <div className="relative cursor-pointer flex-shrink-0 w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-md" onClick={() => setShowVault(true)}>
+              <img src={avatarUrl || persona.avatarUrl} className="w-full h-full object-cover" alt={persona.name} />
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
             </div>
             <div className="flex flex-col">
@@ -582,23 +616,16 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
               <Heart size={14} className="text-pink-500 fill-pink-500" />
               <span className="text-xs font-black text-pink-600 dark:text-pink-400">{profile.hearts}</span>
             </div>
-            <button onClick={() => setShowSearch(!showSearch)} className={`p-2 rounded-full ${isDarkMode ? 'text-white' : 'text-[#4A2040]'}`}><Search size={18} /></button>
             <button onClick={onStartCall} className="p-2.5 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 text-white shadow-lg shadow-pink-200/50"><Phone size={18} fill="currentColor" /></button>
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full ${isDarkMode ? 'text-white' : 'text-[#4A2040]'}`}><Palette size={20} /></button>
           </div>
         </div>
       </header>
 
-      {showSearch && (
-        <div className={`px-4 py-2 border-b flex items-center gap-2 bg-white dark:bg-[#151921]`}>
-          <Search size={16} className="text-gray-400" />
-          <input type="text" placeholder="Search history..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent border-none outline-none text-xs py-2" autoFocus />
-          <button onClick={() => { setShowSearch(false); setSearchQuery(''); }}><X size={16} /></button>
-        </div>
-      )}
+
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto pt-6 pb-24 space-y-2 relative">
-        {filteredMessages.map((msg) => (
+        {messages.map((msg) => (
           <MessageDisplayItem
             key={msg.id}
             msg={msg}
@@ -629,26 +656,48 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
         )}
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 p-4 z-30">
-        <div className={`max-w-screen-xl mx-auto flex flex-col gap-3 p-3 rounded-[32px] border ${isDarkMode ? 'bg-[#151921]/95 border-white/5' : 'bg-white/95 border-pink-100'} backdrop-blur-xl shadow-lg`}>
-
-          <div className="px-4 text-[9px] text-[#8e6a88]/40 font-bold uppercase tracking-tighter text-center italic">
-            AI-Generated Response • Entertainment Purpose Only • No Real Human Interaction
-          </div>
+      <footer className="fixed bottom-0 left-0 right-0 p-2 sm:p-4 z-30 flex justify-center">
+        <div className={`w-full max-w-[600px] flex flex-col gap-2 p-2 rounded-[24px] border ${isDarkMode ? 'bg-[#151921]/95 border-white/5' : 'bg-white/95 border-pink-100'} backdrop-blur-xl shadow-2xl`}>
 
           {replyTo && (
-            <div className="flex items-center justify-between p-2 rounded-xl bg-pink-50 border border-pink-100 text-pink-800 text-xs">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-pink-50 border border-pink-100 text-pink-800 text-[10px]">
               <div className="line-clamp-1 italic">Replying to: {replyTo.text}</div>
-              <button onClick={() => setReplyTo(null)}><X size={14} /></button>
+              <button onClick={() => setReplyTo(null)} className="p-1"><X size={12} /></button>
             </div>
           )}
+
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowGiftModal(true)} className="p-3 bg-pink-50 dark:bg-white/5 rounded-2xl text-pink-500 shadow-sm border border-pink-200 border-dashed"><GiftIcon size={20} /></button>
-            <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
-              <input type="text" placeholder={`Message ${persona.name}...`} value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} className="flex-1 bg-transparent border-none outline-none text-sm" />
-              {!inputText && <button className={isRecording ? 'text-red-500 animate-pulse' : 'text-gray-400'} onClick={() => setIsRecording(!isRecording)}><Mic size={18} /></button>}
+            <button
+              onClick={() => setShowGiftModal(true)}
+              className="p-2.5 bg-pink-50 dark:bg-white/5 rounded-xl text-pink-500 border border-pink-100"
+            >
+              <GiftIcon size={18} />
+            </button>
+            <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
+              <input
+                type="text"
+                placeholder={`Message ${persona.name}...`}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                className="flex-1 bg-transparent border-none outline-none text-[14px]"
+              />
+              {!inputText && (
+                <button
+                  className={isRecording ? 'text-red-500 animate-pulse' : 'text-gray-400'}
+                  onClick={() => setIsRecording(!isRecording)}
+                >
+                  <Mic size={16} />
+                </button>
+              )}
             </div>
-            <button onClick={() => handleSend()} disabled={!inputText.trim() || isTyping} className="p-4 rounded-2xl bg-gradient-to-br from-pink-400 to-purple-400 text-white shadow-lg disabled:opacity-30"><Send size={20} /></button>
+            <button
+              onClick={() => handleSend()}
+              disabled={!inputText.trim() || isTyping}
+              className="p-3 rounded-xl bg-gradient-to-br from-pink-400 to-purple-400 text-white shadow-lg disabled:opacity-30 active:scale-95 transition-transform"
+            >
+              <Send size={18} />
+            </button>
           </div>
         </div>
       </footer>
