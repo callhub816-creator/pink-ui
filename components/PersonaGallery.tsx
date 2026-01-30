@@ -17,15 +17,15 @@ const PersonaGallery: React.FC<PersonaGalleryProps> = ({ personas, onStartCall, 
          Mobile-First Grid: 
          - Single column on mobile (w-full cards)
          - 2 columns on tablet
-         - 4 columns on desktop 
+         - 3 columns on desktop
          - Gap adjusted for card spacing
       */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
         {personas.map((persona) => (
-          <PersonaCard 
-            key={persona.id} 
-            persona={persona} 
-            onStartCall={onStartCall} 
+          <PersonaCard
+            key={persona.id}
+            persona={persona}
+            onStartCall={onStartCall}
             onStartChat={onStartChat}
             onViewProfile={onViewProfile}
           />

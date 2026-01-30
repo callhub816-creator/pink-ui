@@ -16,9 +16,10 @@ import AdminPage from './components/AdminPage';
 import GuestChat from './GuestChat';
 import AgeGate from './components/AgeGate';
 import ErrorBoundary from './components/ErrorBoundary';
+import PersonaCreationModal from './components/PersonaCreationModal';
 import { Sparkles, Heart, Phone, Lock, Trash2, MessageCircle, Shield } from 'lucide-react';
-import { Persona } from './types';
-import { PERSONAS } from './constants';
+import { ModeCardData, Persona } from './types';
+import { PERSONAS, MODE_CARDS } from './constants';
 import { storage } from './utils/storage';
 
 interface ChatSession {
@@ -67,6 +68,7 @@ const AppContent: React.FC = () => {
   const [activeCallAvatarUrl, setActiveCallAvatarUrl] = useState<string | undefined>(undefined);
   const [activeChatSession, setActiveChatSession] = useState<ChatSession | null>(null);
   const [viewingProfile, setViewingProfile] = useState<{ persona: Persona, avatarUrl?: string } | null>(null);
+  const [selectedCreationMode, setSelectedCreationMode] = useState<ModeCardData | null>(null);
 
 
 
@@ -215,6 +217,15 @@ const AppContent: React.FC = () => {
         />
       )}
 
+      {/* Persona Creation Modal Overlay */}
+      {selectedCreationMode && (
+        <PersonaCreationModal
+          mode={selectedCreationMode}
+          onClose={() => setSelectedCreationMode(null)}
+          onCreated={handlePersonaCreated}
+        />
+      )}
+
       {/* Main Content */}
       <main className={`relative z-10 flex flex-col items-center w-full ${activeChatSession ? 'hidden' : ''}`}>
 
@@ -277,7 +288,7 @@ const AppContent: React.FC = () => {
 
         {/* Mode Cards Section */}
         <div ref={vibeRef} className="w-full bg-gradient-to-b from-[#FFF0F5] to-[#FDF2F8] pt-16 pb-0 rounded-t-[3rem] shadow-[0_-20px_60px_-15px_rgba(255,182,193,0.3)] border-t border-white/60 relative z-10">
-          <CardGallery onPersonaCreated={handlePersonaCreated} />
+          <CardGallery onOpenCreation={setSelectedCreationMode} />
         </div>
 
         <footer className="w-full bg-[#FBF9FB] text-[#6B5E6B] py-7 px-6 font-sans border-t border-black/5 relative z-10 transition-colors duration-300">

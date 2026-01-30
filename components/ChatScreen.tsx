@@ -14,7 +14,7 @@ import { SelectionToolbar } from './SelectionToolbar';
 import { ConfirmModal } from './ConfirmModal';
 import { LANGUAGE_CONTROL_SYSTEM_MESSAGE, NAME_AGNOSTIC_NOTE, GATING_CONFIG, GIFT_ITEMS, HEARTS_PACKS } from '../constants';
 import { PERSONA_PROMPTS, FALLBACK_REPLIES } from '../src/config/personaConfig';
-import { sambaRotator, groqRotator } from '../utils/ai-rotator';
+import { geminiRotator } from '../utils/ai-rotator';
 
 interface ChatScreenProps {
   persona: Persona;
@@ -328,22 +328,18 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
   }, [messages, isTyping]);
 
   const initSession = async () => {
-    // SambaNova doesn't require stateful sessions like Google SDK's startChat,
-    // we'll manage history in handleSend.
-    setChatSession({ type: 'sambanova' });
+    setChatSession({ type: 'gemini' });
   };
 
   const handleSend = async (resendText?: string, retryCount: number = 0) => {
     const text = resendText || inputText;
     if (!text.trim()) return;
-    if (isTyping && !resendText) return; // Only block if it's a NEW message, not a retry
+    if (isTyping && !resendText) return;
 
-    // Phase 1: Message Debounce (Prevent rapid double sending)
     const now = Date.now();
     if (!resendText && now - (lastInteractionRef.current || 0) < 1500) return;
-    lastInteractionRef.current = now; // Update immediately to block nudges/double-taps
+    lastInteractionRef.current = now;
 
-    // Phase 1: Rate Limiting (10 msgs per minute)
     const minuteAgo = now - 60000;
     rateLimitRef.current = rateLimitRef.current.filter(ts => ts > minuteAgo);
     if (rateLimitRef.current.length >= 10) {
@@ -352,7 +348,6 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
     }
     rateLimitRef.current.push(now);
 
-    // Check Gating: Message Limit & Night Lock
     if (isMessageLimitReached()) {
       setShowPaywall(true);
       return;
@@ -372,172 +367,87 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
       replyTo: replyTo ? { id: replyTo.id, text: replyTo.text, sender: replyTo.sender } : undefined
     };
 
-    // Push to UI only if this is NOT a retry
     if (!resendText) {
       setMessages(prev => [...prev, newUserMsg]);
       setInputText('');
       setReplyTo(null);
       storage.saveMessage(persona.id, { ...newUserMsg, timestamp: newUserMsg.timestamp.toISOString() });
-      incrementUsage(); // Record usage for gating
+      incrementUsage();
     }
 
     setIsTyping(true);
     const startTime = Date.now();
     const isPaid = profile.subscription !== 'free';
 
-
-    const performAiCall = async (retryCount: number = 0, isFallback: boolean = false): Promise<string> => {
-      const isPaid = profile.subscription !== 'free';
-
-      // Select provider and configuration based on user status and retry state
-      let rotator;
-      let providerName;
-      let apiUrl;
-      let model;
-      let maxTokens;
-
-      if (isPaid) {
-        // PAID: SambaNova Only (rotate within its pool on failure)
-        rotator = sambaRotator;
-        providerName = 'SambaNova (Paid)';
-        apiUrl = "https://api.sambanova.ai/v1/chat/completions";
-        model = "Meta-Llama-3.1-405B-Instruct"; // Premium model for paid users
-        maxTokens = 500;
-
-        // Final fallback to 70B if 405B fails repeatedly (internal rotation)
-        if (retryCount >= 2) model = "Meta-Llama-3.1-70B-Instruct";
-      } else {
-        // FREE: Primary (SambaNova) -> Fallback (Groq)
-        if (!isFallback) {
-          rotator = sambaRotator;
-          providerName = 'SambaNova (Free Primary)';
-          apiUrl = "https://api.sambanova.ai/v1/chat/completions";
-          model = "Meta-Llama-3.1-70B-Instruct";
-          maxTokens = 150;
-        } else {
-          rotator = groqRotator;
-          providerName = 'Groq (Free Fallback)';
-          apiUrl = "https://api.groq.com/openai/v1/chat/completions";
-          model = "llama-3.3-70b-versatile";
-          maxTokens = 100;
-        }
-      }
-
-      const keyState = rotator.getKey();
+    const performAiCall = async (retryCount: number = 0): Promise<string> => {
+      const keyState = geminiRotator.getKey();
       if (!keyState) {
-        // If primary key missing for free user, jump to fallback immediately
-        if (!isPaid && !isFallback) {
-          console.log("[CallHub] Primary keys missing, attempting fallback provider...");
-          return await performAiCall(0, true);
-        }
-        throw new Error(`Missing API Key for ${providerName}`);
+        throw new Error("Missing Gemini API Key");
       }
 
-      const historyDepth = isPaid ? 15 : 5;
+      const historyDepth = isPaid ? 15 : 8;
       const systemPrompt = PERSONA_PROMPTS[persona.name] || (LANGUAGE_CONTROL_SYSTEM_MESSAGE + "\n" + persona.basePrompt);
+
       const history = messages.slice(-historyDepth).filter(m => !m.isError).map(m => ({
-        role: m.sender === 'user' ? "user" : "assistant",
-        content: m.text,
+        role: m.sender === 'user' ? "user" : "model",
+        parts: [{ text: m.text }],
       }));
 
       try {
-        console.log(`[CallHub] Calling ${providerName} | Key Index: ${keyState.index} | Attempt: ${retryCount + 1}`);
+        console.log(`[CallHub] Calling Gemini | Key Index: ${keyState.index} | Attempt: ${retryCount + 1}`);
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${keyState.value}`
-          },
-          signal: controller.signal,
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt + "\n" + NAME_AGNOSTIC_NOTE + "\nIMPORTANT: Stay in character. Use natural Hinglish. Keep it 1-3 sentences." },
-              ...history,
-              { role: "user", content: text }
-            ],
-            temperature: 0.8,
-            max_tokens: maxTokens
-          })
+        const genAI = new GoogleGenerativeAI(keyState.value);
+        const model = genAI.getGenerativeModel({
+          model: "gemini-1.5-flash",
+          systemInstruction: systemPrompt + "\n" + NAME_AGNOSTIC_NOTE + "\nIMPORTANT: Stay in character. Use natural Hinglish. Keep it 1-3 sentences."
         });
 
-        clearTimeout(timeoutId);
+        const chat = model.startChat({
+          history: history,
+          generationConfig: {
+            maxOutputTokens: isPaid ? 500 : 200,
+            temperature: 0.8,
+          },
+        });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const reason = response.status === 429 ? "Quota/Rate Limit" : (errorData.error?.message || `HTTP ${response.status}`);
-
-          console.warn(`[CallHub] ${providerName} Error: ${reason}`);
-          rotator.rotate(reason);
-
-          // Rotation Logic
-          if (isPaid) {
-            // Paid users rotate through SambaNova pool up to 3 times
-            if (retryCount < 2) {
-              return await performAiCall(retryCount + 1, false);
-            }
-          } else {
-            // Free users: Rotate primary once, then switch to fallback
-            if (!isFallback && retryCount < 1) {
-              return await performAiCall(retryCount + 1, false);
-            } else if (!isFallback) {
-              return await performAiCall(0, true);
-            } else if (isFallback && retryCount < 1) {
-              // Rotate fallback once if needed
-              return await performAiCall(retryCount + 1, true);
-            }
-          }
-          throw new Error(reason);
-        }
-
-        const data = await response.json();
-        return data.choices[0].message.content;
+        const result = await chat.sendMessage(text);
+        const response = await result.response;
+        return response.text();
 
       } catch (err: any) {
-        const errorReason = err.name === 'AbortError' ? "Timeout" : (err.message || "Network Error");
-        console.error(`[CallHub] ${providerName} Request Failed:`, errorReason);
+        const errorReason = err.message || "Gemini Error";
+        console.warn(`[CallHub] Gemini Error: ${errorReason}`);
 
-        rotator.rotate(errorReason);
+        geminiRotator.rotate(errorReason);
 
-        if (isPaid && retryCount < 2) {
-          return await performAiCall(retryCount + 1, false);
-        } else if (!isPaid) {
-          if (!isFallback) return await performAiCall(0, true);
-          if (isFallback && retryCount < 1) return await performAiCall(retryCount + 1, true);
+        if (retryCount < 1 && geminiRotator.getAvailableKeysCount() > 1) {
+          return await performAiCall(retryCount + 1);
         }
         throw err;
       }
     };
 
-
     try {
       const responseText = await performAiCall();
 
       if (responseText) {
-        // Mandatory Fix 1: Dynamic Reply Delay
         const responseTime = Date.now() - startTime;
-        let targetDelay = 3000; // Small
-        if (responseText.length > 150) targetDelay = 9000; // Emotional/Long
-        else if (responseText.length > 50) targetDelay = 6000; // Medium
-        else targetDelay = 3000; // Short
+        let targetDelay = 3000;
+        if (responseText.length > 150) targetDelay = 8000;
+        else if (responseText.length > 50) targetDelay = 5000;
+        else targetDelay = 2500;
 
-        // Randomized delay ±1s
         const randomVariance = Math.floor(Math.random() * 2000) - 1000;
         const finalDelay = Math.max(1000, targetDelay + randomVariance);
 
         const remainingDelay = Math.max(0, finalDelay - responseTime);
         if (remainingDelay > 0) await new Promise(r => setTimeout(r, remainingDelay));
 
-        // Mandatory Fix: Locked Letter Timing Refinement (Trigger based on engagement)
         modelMsgCountRef.current += 1;
         let shouldLock = false;
         if (modelMsgCountRef.current >= 8 + Math.floor(Math.random() * 5) && responseText.length > 50) {
           shouldLock = true;
-          modelMsgCountRef.current = 0; // Reset
+          modelMsgCountRef.current = 0;
         }
 
         const modelMsg: Message = {
@@ -554,10 +464,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
         lastInteractionRef.current = Date.now();
       }
     } catch (err: any) {
-      console.error('SambaNova Error:', err);
-      const isRateLimit = err.message?.includes('429') || err.status === 429;
+      console.error('Gemini Call Failed:', err);
+      const isRateLimit = err.message?.includes('429');
       const errorText = isRateLimit
-        ? "I'm a bit overwhelmed with so many thoughts right now... give me a minute to catch my breath? ❤️"
+        ? "I'm a bit overwhelmed with so many thoughts right now... give me a minute? ❤️"
         : (FALLBACK_REPLIES[persona.name] || FALLBACK_REPLIES.Default);
 
       setMessages(prev => [...prev, {
@@ -570,57 +480,40 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
     } finally { setIsTyping(false); }
   };
 
-  // Retention Nudges (Idle thoughts from Myra)
   useEffect(() => {
     const interval = setInterval(async () => {
       const idleTime = Date.now() - lastInteractionRef.current;
-
-      // Mandatory Fix 2: Session Logic for Nudges
       const sessionCount = profile.sessionsCount || 0;
-      if (sessionCount <= 1) return; // No nudge in first session
-      if (nudgeSentRef.current) return; // Max 1 per session
+      if (sessionCount <= 1) return;
+      if (nudgeSentRef.current) return;
 
-      // Nudge after 2 minutes of silence if user has sent at least 3 messages
       if (idleTime > 120000 && !isTyping && messages.filter(m => m.sender === 'user').length >= 3) {
         lastInteractionRef.current = Date.now();
         setIsTyping(true);
-        nudgeSentRef.current = true; // Mark as sent for this session
+        nudgeSentRef.current = true;
 
         try {
-          const keyState = sambaRotator.getKey();
+          const keyState = geminiRotator.getKey();
           if (!keyState) return;
 
-          const response = await fetch("https://api.sambanova.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${keyState.value}`
-            },
-            body: JSON.stringify({
-              model: "Meta-Llama-3.1-70B-Instruct",
-              messages: [
-                { role: "system", content: (PERSONA_PROMPTS[persona.name] || persona.basePrompt) + "\n\nNudge context: You noticed the user has been quiet for a while. Send a very short, sweet Hinglish nudge (1 sentence) to bring them back. Don't be needy, just sweet. ALWAYS stay in character." },
-                { role: "user", content: "..." } // Silent trigger
-              ],
-              temperature: 0.9,
-              max_tokens: 50
-            })
+          const genAI = new GoogleGenerativeAI(keyState.value);
+          const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            systemInstruction: (PERSONA_PROMPTS[persona.name] || persona.basePrompt) + "\n\nNudge context: You noticed the user has been quiet. Send a very short, sweet Hinglish nudge (1 sentence). Don't be needy. ALWAYS stay in character."
           });
 
-          if (!response.ok) {
-            sambaRotator.rotate(`Nudge Failure: ${response.status}`);
-            return;
-          }
-
-          const data = await response.json();
-          const txt = data.choices[0].message.content;
+          const result = await model.generateContent("...");
+          const response = await result.response;
+          const txt = response.text();
 
           if (txt) {
             const msg: Message = { id: Date.now().toString(), sender: 'model', text: txt, timestamp: new Date() };
             setMessages(prev => [...prev, msg]);
             storage.saveMessage(persona.id, { ...msg, timestamp: msg.timestamp.toISOString() });
           }
-        } catch (e) { } finally { setIsTyping(false); }
+        } catch (e) {
+          geminiRotator.rotate("Nudge Failure");
+        } finally { setIsTyping(false); }
       }
     }, 60000);
     return () => clearInterval(interval);

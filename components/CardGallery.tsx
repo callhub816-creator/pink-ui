@@ -5,21 +5,15 @@ import { ModeCardData, Persona } from '../types';
 import PersonaCreationModal from './PersonaCreationModal';
 
 interface CardGalleryProps {
-  onPersonaCreated: (persona: Persona, avatarUrl?: string) => void;
+  onOpenCreation: (mode: ModeCardData) => void;
 }
 
-const CardGallery: React.FC<CardGalleryProps> = ({ onPersonaCreated }) => {
-  const [selectedMode, setSelectedMode] = useState<ModeCardData | null>(null);
-
-  const handleCreate = (persona: Persona, avatarUrl?: string) => {
-    onPersonaCreated(persona, avatarUrl);
-    setSelectedMode(null);
-  };
-
+const CardGallery: React.FC<CardGalleryProps> = ({ onOpenCreation }) => {
   const defaultMode = MODE_CARDS.find(m => m.id === 2) || MODE_CARDS[0];
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-8">
+      {/* ... Hero card section remains same ... */}
       <div className="max-w-3xl mx-auto px-6">
         <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[2rem] p-8 md:p-10 shadow-[0_20px_50px_-15px_rgba(178,141,255,0.15)] text-center space-y-6 relative overflow-hidden transition-all hover:shadow-[0_30px_60px_-15px_rgba(178,141,255,0.2)]">
           {/* Decorative Elements */}
@@ -37,7 +31,7 @@ const CardGallery: React.FC<CardGalleryProps> = ({ onPersonaCreated }) => {
 
           <div className="pt-2 relative z-10">
             <button
-              onClick={() => setSelectedMode(defaultMode)}
+              onClick={() => onOpenCreation(defaultMode)}
               className="px-8 py-4 bg-gradient-to-r from-[#FF9ACB] to-[#B28DFF] text-white font-bold text-base rounded-2xl shadow-xl shadow-[#B28DFF]/30 hover:shadow-[#B28DFF]/50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center mx-auto gap-3"
             >
               Create AI Companion
@@ -59,14 +53,6 @@ const CardGallery: React.FC<CardGalleryProps> = ({ onPersonaCreated }) => {
           </p>
         </div>
       </div>
-
-      {selectedMode && (
-        <PersonaCreationModal
-          mode={selectedMode}
-          onClose={() => setSelectedMode(null)}
-          onCreated={handleCreate}
-        />
-      )}
     </div>
   );
 };
