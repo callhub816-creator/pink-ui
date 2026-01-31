@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { saveUserPersona } from "../src/utils/storage";
-import { GoogleGenAI } from "@google/genai";
+// Removed GoogleGenAI import to comply with security requirements
 import { ModeCardData, Persona } from '../types';
 import { MODE_CONFIGS } from '../constants';
 import { X, Upload, Sparkles, Wand2, Loader2, AlertTriangle, ArrowRight, Lock, Shield } from 'lucide-react';
@@ -41,26 +41,27 @@ const PersonaCreationModal: React.FC<PersonaCreationModalProps> = ({ mode, onClo
   const VOICE_TONES = ["Soft", "Warm", "Playful", "Deep"];
 
   const generateSystemImage = async (personaName: string, gender: string, style: string, vibe: string) => {
-    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY ||
-      import.meta.env.VITE_API_KEY ||
-      (typeof process !== 'undefined' ? (process.env as any).API_KEY : null);
-    if (!API_KEY) throw new Error("API Key Missing");
-
-    const ai = new GoogleGenAI({ apiKey: API_KEY });
     const prompt = `Portrait of a ${gender} named ${personaName}. Style: ${style}. Vibe: ${vibe}. High quality, 1:1 aspect ratio, soft lighting, warm and soft aesthetic. No text.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp' as any,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: prompt,
+        model: 'gemini-2.0-flash-exp'
+      })
     });
 
-    if (response.candidates && response.candidates[0]?.content?.parts) {
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          return `data:image/png;base64,${part.inlineData.data}`;
-        }
-      }
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Image generation failed");
     }
+
+    const data = await res.json();
+    if (data.inlineData) {
+      return `data:image/png;base64,${data.inlineData.data}`;
+    }
+
     throw new Error("No image generated");
   };
 

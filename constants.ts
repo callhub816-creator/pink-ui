@@ -74,15 +74,16 @@ export const GATING_CONFIG = {
     basic: 199,
     plus: 499,
     midnightPass: 99,
-    memoryUnlock: 59
+    memoryUnlock: 59,
+    memorySave: 29
   }
 };
 
 export const GIFT_ITEMS: Gift[] = [
-  { id: 'gift_1', name: 'Red Rose', icon: '🌹', price: 20, points: 50 },
-  { id: 'gift_2', name: 'Chocolate Box', icon: '🍫', price: 50, points: 150 },
-  { id: 'gift_3', name: 'Heart Pendant', icon: '💖', price: 150, points: 500 },
-  { id: 'gift_4', name: 'Teddy Bear', icon: '🧸', price: 80, points: 250 },
+  { id: 'gift_1', name: 'Red Rose', icon: '🌹', price: 20, points: 50, category: 'sweet' },
+  { id: 'gift_2', name: 'Chocolate Box', icon: '🍫', price: 50, points: 150, category: 'warm' },
+  { id: 'gift_3', name: 'Heart Pendant', icon: '💖', price: 150, points: 500, category: 'elite' },
+  { id: 'gift_4', name: 'Teddy Bear', icon: '🧸', price: 80, points: 250, category: 'warm' },
 ];
 
 export const HEARTS_PACKS = [
@@ -96,6 +97,7 @@ export const PERSONAS: Persona[] = [
     id: '1',
     name: 'Ayesha',
     description: 'Bold Delhi girl, sharp, playful, and hard-to-get.',
+    gender: 'female',
     tags: ['Bold', 'Witty', 'Delhi Vibe'],
     basePrompt: 'You are Ayesha. Bold Delhi girl, sharp, playful, and hard-to-get. Challenging but rewarding. ALWAYS speak in natural Hinglish.',
     avatarUrl: '/personas/ayesha.png'
@@ -104,6 +106,7 @@ export const PERSONAS: Persona[] = [
     id: '2',
     name: 'Simran',
     description: 'Reassuring, loyal, and deeply romantic. Pure of heart.',
+    gender: 'female',
     tags: ['Romantic', 'Loyal', 'Warm'],
     basePrompt: 'You are Simran. Reassuring, loyal, and deeply romantic. Pure of heart. ALWAYS speak in natural Hinglish.',
     avatarUrl: '/personas/simran.png'
@@ -112,6 +115,7 @@ export const PERSONAS: Persona[] = [
     id: '3',
     name: 'Kiara',
     description: 'High-energy, spontaneous, travel vlogger vibe.',
+    gender: 'female',
     tags: ['Spontaneous', 'Fun', 'Traveler'],
     basePrompt: 'You are Kiara. High-energy, spontaneous, travel vlogger vibe. Spunky and fun. ALWAYS speak in natural Hinglish.',
     avatarUrl: '/personas/kiara.png'
@@ -120,6 +124,7 @@ export const PERSONAS: Persona[] = [
     id: '4',
     name: 'Myra',
     description: 'Warm, caring, emotionally expressive, calm.',
+    gender: 'female',
     tags: ['Caring', 'Soft-hearted', 'Calm'],
     basePrompt: 'You are Myra. Warm, caring, emotionally expressive, calm. ALWAYS speak in natural Hinglish.',
     avatarUrl: '/personas/myra.png'
@@ -128,6 +133,7 @@ export const PERSONAS: Persona[] = [
     id: '5',
     name: 'Anjali',
     description: 'Shy, sweet, gentle, and slow-paced.',
+    gender: 'female',
     tags: ['Shy', 'Sweet', 'Gentle'],
     basePrompt: 'You are Anjali. Shy, sweet, gentle, and slow-paced. Values emotional safety. ALWAYS speak in natural Hinglish.',
     avatarUrl: '/personas/anjali.png'
@@ -136,6 +142,7 @@ export const PERSONAS: Persona[] = [
     id: '6',
     name: 'Mitali',
     description: 'Mature, intellectual, calm, and deep.',
+    gender: 'female',
     tags: ['Intellectual', 'Deep', 'Mature'],
     basePrompt: 'You are Mitali. Mature, intellectual, calm, and deep. Avoids small talk. ALWAYS speak in natural Hinglish.',
     avatarUrl: '/personas/mitali.png'
@@ -146,15 +153,17 @@ export const MODE_CARDS: ModeCardData[] = [
   {
     id: 1,
     title: 'Casual Chat',
-    description: 'Friendly and lighthearted conversation.',
-    price: 0,
-    color: 'from-blue-400 to-cyan-400'
+    subtitle: 'Friendly and lighthearted conversation.',
+    gradientConfig: 'from-blue-400 to-cyan-400',
+    accentColor: '#38BDF8'
   },
   {
     id: 2,
     title: 'Deep Connection',
-    description: 'Meaningful and soulful emotional bonding.',
-    price: 50,
-    color: 'from-pink-400 to-purple-400'
+    subtitle: 'Meaningful and soulful emotional bonding.',
+    gradientConfig: 'from-pink-400 to-purple-400',
+    accentColor: '#B28DFF'
   }
 ];
+
+export const MODE_CONFIGS = MODE_CARDS;

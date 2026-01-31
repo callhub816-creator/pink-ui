@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Persona, ConnectionLevel } from '../types';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// Removed direct GoogleGenerativeAI import to comply with security requirements
 import { ArrowLeft, Phone, Mic, Send, Heart, User, AlertCircle, Check, CheckCheck, Palette, X, Sparkles, Reply, Trash2, RefreshCw, Lock as LockIcon, Gift as GiftIcon, PlusCircle, Zap } from 'lucide-react';
 import { storage } from '../utils/storage';
 import { shouldSwitchToPureEnglish, shouldSwitchToPureHindi } from '../utils/languageDetection';
@@ -405,12 +405,11 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
     const personaSummary = storage.getSummary(persona.id);
 
     const performAiCall = async (aiRetryCount: number = 0): Promise<string> => {
-      const keyState = geminiRotator.getKey();
-      if (!keyState) {
-        throw new Error("Missing Gemini API Key");
-      }
-
       const systemPrompt = PERSONA_PROMPTS[persona.name] || (LANGUAGE_CONTROL_SYSTEM_MESSAGE + "\n" + persona.basePrompt);
+      const fullSystemPrompt = memoryHeader + "\n" + systemPrompt + "\n" + NAME_AGNOSTIC_NOTE +
+        `\n\nCURRENT USER INTENT: [${intent}]` +
+        `\n\nCURRENT SUMMARY: ${personaSummary}` +
+        `\n\nCURRENT USER STATUS: The user is in ${userMode} mode. Follow ${userMode} and intent-based response rules strictly.`;
 
       const history = slidingWindow.map(m => ({
         role: m.sender === 'user' ? "user" : "model",
@@ -418,66 +417,54 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
       }));
 
       try {
-        console.log(`[CallHub] Gemini Call | Mode: ${userMode} | Key Index: ${keyState.index}`);
+        console.log(`[CallHub] Backend Call | Mode: ${userMode}`);
 
-        const genAI = new GoogleGenerativeAI(keyState.value);
-        const model = genAI.getGenerativeModel({
-          model: "gemini-1.5-flash",
-          systemInstruction: memoryHeader + "\n" + systemPrompt + "\n" + NAME_AGNOSTIC_NOTE +
-            `\n\nCURRENT USER INTENT: [${intent}]` +
-            `\n\nCURRENT SUMMARY: ${personaSummary}` +
-            `\n\nCURRENT USER STATUS: The user is in ${userMode} mode. Follow ${userMode} and intent-based response rules strictly.`
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            systemPrompt: fullSystemPrompt,
+            history: history,
+            userMode: userMode
+          })
         });
 
-        const chat = model.startChat({
-          history: history,
-          generationConfig: {
-            maxOutputTokens: isPaid ? 500 : 200,
-            temperature: 0.8,
-          },
-        });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Network issue with AI service');
+        }
 
-        const result = await chat.sendMessage(text);
-        const response = await result.response;
-        const responseText = response.text();
+        const data = await res.json();
+        const responseText = data.text;
 
         // --- Summarization Trigger ---
         if (messages.length >= 10 && messages.length % 10 === 0) {
           const summaryPrompt = `Provide a 2-line emotional summary of our recent conversation. Focused on user's current vibe and key topic.`;
-          const sumResult = await model.generateContent({
-            contents: [...history, { role: 'model', parts: [{ text: responseText }] }, { role: 'user', parts: [{ text: summaryPrompt }] }]
-          });
-          const newSummary = (await sumResult.response).text();
-          storage.saveSummary(persona.id, newSummary);
+          try {
+            const sumRes = await fetch('/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                message: summaryPrompt,
+                systemPrompt: fullSystemPrompt,
+                history: [...history, { role: 'model', parts: [{ text: responseText }] }],
+                userMode: userMode
+              })
+            });
+            if (sumRes.ok) {
+              const sumData = await sumRes.json();
+              storage.saveSummary(persona.id, sumData.text);
+            }
+          } catch (e) {
+            console.warn("Summary generation failed", e);
+          }
         }
 
-        let finalResponseText = responseText;
-
-        // --- TASK 4: SAFE CONVERSION INJECTION ---
-        const isFree = !isPaid;
-        const hasEnoughContext = messages.length > 5;
-        const withinFrequencyLimit = teasesSentRef.current < 2;
-        const isEmotionalIntent = intent === 'EMOTIONAL';
-
-        // Context-specific block check (Task 4)
-        const blockKeywords = ['paisa', 'salary', 'job', 'health', 'hospital', 'bimari', 'death', 'tension', 'problem'];
-        const isContextSafe = !blockKeywords.some(word => text.toLowerCase().includes(word));
-
-        if (isFree && isEmotionalIntent && hasEnoughContext && withinFrequencyLimit && isContextSafe && Math.random() > 0.6) {
-          const conversionMsg = CONVERSION_POOL[Math.floor(Math.random() * CONVERSION_POOL.length)];
-          finalResponseText += "\n\n" + conversionMsg;
-          teasesSentRef.current += 1;
-        }
-
-        return finalResponseText;
+        return responseText;
 
       } catch (err: any) {
-        const errorReason = err.message || "Gemini Error";
-        console.warn(`[CallHub] Gemini Error: ${errorReason}`);
-        geminiRotator.rotate(errorReason);
-        if (aiRetryCount < 1 && geminiRotator.getAvailableKeysCount() > 1) {
-          return await performAiCall(aiRetryCount + 1);
-        }
+        console.warn(`[CallHub] AI Error: ${err.message}`);
         throw err;
       }
     };
@@ -555,32 +542,40 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
         setIsTyping(true);
         nudgeSentRef.current = true;
 
-        try {
-          const keyState = geminiRotator.getKey();
-          if (!keyState) return;
+        const nudgeUserMode = profile.subscription !== 'free' ? 'PREMIUM' : 'FREE';
+        const nudgeSlidingWindow = messages.slice(-12).filter(m => !m.isError);
 
-          const genAI = new GoogleGenerativeAI(keyState.value);
-          const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-            systemInstruction: (PERSONA_PROMPTS[persona.name] || persona.basePrompt) + "\n\nNudge context: You noticed the user has been quiet. Send a very short, sweet Hinglish nudge (1 sentence). Don't be needy. ALWAYS stay in character."
+        try {
+          const res = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: "...",
+              systemPrompt: (PERSONA_PROMPTS[persona.name] || persona.basePrompt) + "\n\nNudge context: You noticed the user has been quiet. Send a very short, sweet Hinglish nudge (1 sentence). Don't be needy. ALWAYS stay in character.",
+              history: nudgeSlidingWindow.map(m => ({
+                role: m.sender === 'user' ? "user" : "model",
+                parts: [{ text: m.text }]
+              })),
+              userMode: nudgeUserMode
+            })
           });
 
-          const result = await model.generateContent("...");
-          const response = await result.response;
-          const txt = response.text();
-
-          if (txt) {
-            const msg: Message = { id: Date.now().toString(), sender: 'model', text: txt, timestamp: new Date() };
-            setMessages(prev => [...prev, msg]);
-            storage.saveMessage(persona.id, { ...msg, timestamp: msg.timestamp.toISOString() });
+          if (res.ok) {
+            const data = await res.json();
+            const txt = data.text;
+            if (txt) {
+              const msg: Message = { id: Date.now().toString(), sender: 'model', text: txt, timestamp: new Date() };
+              setMessages(prev => [...prev, msg]);
+              storage.saveMessage(persona.id, { ...msg, timestamp: msg.timestamp.toISOString() });
+            }
           }
         } catch (e) {
-          geminiRotator.rotate("Nudge Failure");
+          console.warn("Nudge failure", e);
         } finally { setIsTyping(false); }
       }
     }, 60000);
     return () => clearInterval(interval);
-  }, [isTyping, messages.length, persona.id, persona.name, profile.sessionsCount]);
+  }, [isTyping, messages, persona.id, persona.name, profile.sessionsCount, profile.subscription]);
 
   const { isSelectMode, enterSelectMode, toggleSelection, isSelected } = useSelection();
   const { deleteMessages, undoDelete, undoTimeLeft, deletedItems } = useDeleteWithUndo((ids) => {
