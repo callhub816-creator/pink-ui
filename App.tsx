@@ -254,10 +254,10 @@ const AppContent: React.FC = () => {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D53F8C] to-[#9F7AEA]">Stays With You.</span>
             </h1>
             <p className="text-[#5e3a58]/90 font-medium max-w-[280px] md:max-w-lg mb-3 md:mb-6 leading-relaxed text-[clamp(15px,3vw,20px)]">
-              More than a chat. A thoughtful AI companion designed for meaningful conversation, comfort, and connection.
+              A thoughtfully designed AI chat experience for engaging, expressive, and creative conversations.
             </p>
             <p className="text-[#4A2040]/70 font-bold tracking-[0.15em] uppercase mb-5 md:mb-10 text-[clamp(10px,1.8vw,12px)] bg-white/40 px-4 py-1.5 rounded-full border border-white/50 backdrop-blur-sm">
-              Playful • Caring • Confident • Warm • Expressive
+              Playful • Expressive • Confident • Creative • Interactive
             </p>
             <div className="flex flex-col md:flex-row gap-3 md:gap-4 w-full justify-center">
               <button onClick={scrollToVibe} className="flex-1 h-11 md:h-14 px-6 rounded-full bg-gradient-to-r from-[#FF9ACB] to-[#B28DFF] text-white font-bold text-[15px] md:text-lg tracking-wide shadow-[0_8px_25px_rgba(178,141,255,0.4)] hover:shadow-[0_12px_35px_rgba(178,141,255,0.6)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center whitespace-nowrap">

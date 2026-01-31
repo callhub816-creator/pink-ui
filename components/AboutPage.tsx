@@ -30,21 +30,24 @@ const AboutPage: React.FC<PageProps> = ({ onBack }) => {
         <section className="space-y-4">
           <h2 className="text-2xl font-serif-display text-[#4A2040]">About CallHub</h2>
           <p className="leading-relaxed opacity-90">
-            Welcome to CallHub, an innovative conversational platform designed for conversational entertainment. We leverage advanced Artificial Intelligence to provide users with a secure, virtual space for thoughtful interaction.
+            Welcome to CallHub, an AI-powered conversational platform built for interactive and creative entertainment. We use advanced Artificial Intelligence to generate engaging chat experiences in a secure, virtual environment designed purely for digital interaction.
           </p>
         </section>
 
         <section className="space-y-4">
           <h3 className="text-lg font-bold text-[#4A2040]">Our Mission</h3>
           <p className="leading-relaxed opacity-90">
-            Our mission is to provide a sense of connection through simulated conversations. Whether you need an engaging chat or a creative conversation companion, our AI models are designed to adapt to your style and provide a judgment-free zone for expression.
+            Our mission is to deliver high-quality AI-generated conversations that feel natural, expressive, and engaging, while remaining clearly fictional and entertainment-focused.
           </p>
         </section>
 
         <section className="space-y-4">
           <h3 className="text-lg font-bold text-[#4A2040]">AI-Only Interaction</h3>
           <p className="leading-relaxed opacity-90">
-            It is important to understand that <strong>all interactions on CallHub are 100% AI-generated</strong>. There is no real human being on the other end of the chat or call. Our service is purely for entertainment purposes and should not be used as a substitute for professional mental health support or real-world social interactions.
+            All interactions on CallHub are 100% AI-generated and fictional. There is no real human being involved in any chat, message, or response.
+          </p>
+          <p className="leading-relaxed opacity-90">
+            This platform is intended strictly for conversational entertainment. It does not provide dating services, emotional counseling, relationship advice, or mental health support, and should not be considered a substitute for real-world human interaction or professional services.
           </p>
         </section>
 
@@ -52,7 +55,7 @@ const AboutPage: React.FC<PageProps> = ({ onBack }) => {
           <h3 className="text-lg font-bold text-[#4A2040]">Core Values</h3>
           <ul className="space-y-3 list-disc pl-5 opacity-90">
             <li><strong className="text-[#B28DFF]">Privacy:</strong> Your interactions are private and secure.</li>
-            <li><strong className="text-[#B28DFF]">Innovation:</strong> Using Llama-based AI to provide realistic companionship.</li>
+            <li><strong className="text-[#B28DFF]">Innovation:</strong> Using advanced AI models to provide realistic conversational behavior.</li>
             <li><strong className="text-[#B28DFF]">Safety:</strong> Strict 18+ policy to ensure a mature and safe environment.</li>
           </ul>
         </section>
