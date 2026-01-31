@@ -364,7 +364,7 @@ const PersonaCard: React.FC<PersonaCardProps> = ({
             className={`flex-1 h-11 rounded-lg ${locked ? 'bg-gray-400' : 'bg-gradient-to-r from-pink-500 to-purple-500'} text-white font-bold text-sm active:scale-95 transition-all shadow-md`}
             aria-label={`Chat with ${persona.name}`}
           >
-            {locked ? 'Unlock Connection' : 'Chat Now'}
+            {locked ? 'Unlock Connection' : 'Start Chat'}
           </button>
 
           <button

@@ -91,7 +91,7 @@ const PersonaProfileModal: React.FC<PersonaProfileModalProps> = ({
               onClick={onStartChat}
               className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-[#FF9ACB] to-[#B28DFF] text-white font-bold text-lg shadow-lg shadow-purple-200/50 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
             >
-              <MessageCircle size={20} fill="currentColor" /> Chat Now
+              <MessageCircle size={20} fill="currentColor" /> Start Chat
             </button>
             <button
               onClick={onStartCall}
