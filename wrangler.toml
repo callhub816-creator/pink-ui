@@ -1,6 +1,0 @@
-name = "pink-ui"
-
-pages_build_output_dir = "dist"
-pages_functions_directory = "functions"
-
-compatibility_date = "2026-01-30"
