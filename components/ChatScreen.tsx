@@ -598,45 +598,67 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
     <div className={`fixed inset-0 z-50 flex flex-col ${isDarkMode ? 'bg-[#0B0E14]' : 'bg-[#FDF2F8]'} animate-in slide-in-from-right`}>
       {/* Header */}
       <header className={`sticky top-0 z-40 flex flex-col ${isDarkMode ? 'bg-[#0B0E14]/90' : 'bg-[#FDF2F8]/90'} backdrop-blur-xl border-b ${isDarkMode ? 'border-white/5' : 'border-[#B28DFF]/10'}`}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
+          {/* Left: Back & Profile */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={onBack}
-              className={`p-2 -ml-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-white/5 text-white' : 'hover:bg-black/5 text-[#4A2040]'}`}
+              className={`p-2 -ml-1 rounded-full transition-colors flex-shrink-0 ${isDarkMode ? 'hover:bg-white/5 text-white' : 'hover:bg-black/5 text-[#4A2040]'}`}
+              aria-label="Back"
             >
-              <ArrowLeft size={24} />
+              <ArrowLeft size={22} />
             </button>
-            <div className="relative cursor-pointer flex-shrink-0 w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-md" onClick={() => setShowVault(true)}>
-              <img src={avatarUrl || persona.avatarUrl} className="w-full h-full object-cover" alt={persona.name} />
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+
+            <div className="relative group cursor-pointer flex-shrink-0" onClick={() => setShowVault(true)}>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-white shadow-sm transition-transform active:scale-90">
+                <img src={avatarUrl || persona.avatarUrl} className="w-full h-full object-cover" alt={persona.name} />
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
             </div>
-            <div className="flex flex-col">
-              <h2 className={`font-serif-display font-black text-lg ${isDarkMode ? 'text-white' : 'text-[#4A2040]'} leading-tight`}>
+
+            <div className="flex flex-col min-w-0 flex-1 ml-0.5">
+              <h2 className={`font-serif-display font-black text-[15px] sm:text-lg truncate ${isDarkMode ? 'text-white' : 'text-[#4A2040]'} leading-tight`}>
                 {persona.name}
               </h2>
-              <div className="flex items-center gap-1.5 min-w-[120px]">
-                <div className="flex-1 h-1.5 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+              <div className="flex items-center gap-1.5 w-full max-w-[140px]">
+                <div className="flex-1 h-1 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-pink-400 to-purple-500 transition-all duration-1000"
                     style={{ width: `${Math.min(100, (profile.connectionPoints[persona.id] || 0) / (GATING_CONFIG.connectionThresholds.trusted / 100))}%` }}
                   />
                 </div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-[#B28DFF] opacity-80">
+                <span className="text-[8px] font-black uppercase tracking-widest text-[#B28DFF] opacity-80 flex-shrink-0">
                   {useGating().getConnectionTier(persona.id)}
                 </span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <div
               onClick={() => setShowHeartsModal(true)}
-              className="px-3 py-1.5 rounded-full bg-pink-50 dark:bg-white/5 border border-pink-100 dark:border-white/10 flex items-center gap-1.5 cursor-pointer hover:scale-105 transition-transform"
+              className="px-2.5 py-1.5 sm:px-3 rounded-full bg-pink-50 dark:bg-white/5 border border-pink-100 dark:border-white/10 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
             >
-              <Heart size={14} className="text-pink-500 fill-pink-500" />
-              <span className="text-xs font-black text-pink-600 dark:text-pink-400">{profile.hearts}</span>
+              <Heart size={12} className="text-pink-500 fill-pink-500" />
+              <span className="text-[11px] sm:text-xs font-black text-pink-600 dark:text-pink-400">{profile.hearts}</span>
             </div>
-            <button onClick={onStartCall} className="p-2.5 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 text-white shadow-lg shadow-pink-200/50"><Phone size={18} fill="currentColor" /></button>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full ${isDarkMode ? 'text-white' : 'text-[#4A2040]'}`}><Palette size={20} /></button>
+
+            <button
+              onClick={onStartCall}
+              className="p-2 sm:p-2.5 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 text-white shadow-lg shadow-pink-200/50 hover:scale-105 active:scale-90 transition-all"
+              aria-label="Start Voice Call"
+            >
+              <Phone size={16} fill="currentColor" />
+            </button>
+
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-white hover:bg-white/5' : 'text-[#4A2040] hover:bg-black/5'} active:scale-90`}
+              aria-label="Toggle Theme"
+            >
+              <Palette size={18} />
+            </button>
           </div>
         </div>
       </header>
@@ -675,47 +697,52 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
         )}
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 p-2 sm:p-4 z-30 flex justify-center">
-        <div className={`w-full max-w-[600px] flex flex-col gap-2 p-2 rounded-[24px] border ${isDarkMode ? 'bg-[#151921]/95 border-white/5' : 'bg-white/95 border-pink-100'} backdrop-blur-xl shadow-2xl`}>
+      <footer className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 z-30 flex justify-center pb-[safe-area-inset-bottom]">
+        <div className={`w-full max-w-[600px] flex flex-col gap-2 p-2.5 rounded-[22px] md:rounded-[24px] border ${isDarkMode ? 'bg-[#151921]/95 border-white/5' : 'bg-white/95 border-pink-100'} backdrop-blur-xl shadow-2xl transition-all duration-300`}>
 
           {replyTo && (
-            <div className="flex items-center justify-between p-2 rounded-xl bg-pink-50 border border-pink-100 text-pink-800 text-[10px]">
-              <div className="line-clamp-1 italic">Replying to: {replyTo.text}</div>
-              <button onClick={() => setReplyTo(null)} className="p-1"><X size={12} /></button>
+            <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-pink-50/80 border border-pink-100/50 text-pink-800 text-[10px] animate-in slide-in-from-bottom-2">
+              <div className="line-clamp-1 italic font-medium">Replying to: {replyTo.text}</div>
+              <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-pink-100 rounded-full transition-colors"><X size={12} /></button>
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setShowGiftModal(true)}
-              className="p-2.5 bg-pink-50 dark:bg-white/5 rounded-xl text-pink-500 border border-pink-100"
+              className="p-2.5 sm:p-3 bg-pink-50 dark:bg-white/5 rounded-xl text-pink-500 border border-pink-100 dark:border-white/10 active:scale-90 transition-transform flex-shrink-0"
+              aria-label="Send Gift"
             >
               <GiftIcon size={18} />
             </button>
-            <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
+
+            <div className="flex-1 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/10 focus-within:border-[#B28DFF]/30 transition-all">
               <input
                 type="text"
                 placeholder={`Message ${persona.name}...`}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                className="flex-1 bg-transparent border-none outline-none text-[14px]"
+                className="flex-1 bg-transparent border-none outline-none text-[14px] md:text-[15px] font-medium text-[#4A2040] dark:text-white placeholder:text-[#8e6a88]/40"
               />
               {!inputText && (
                 <button
-                  className={isRecording ? 'text-red-500 animate-pulse' : 'text-gray-400'}
+                  className={`${isRecording ? 'text-red-500 animate-pulse scale-110' : 'text-[#8e6a88]/40 hover:text-[#B28DFF]'} transition-all`}
                   onClick={() => setIsRecording(!isRecording)}
+                  aria-label="Voice Input"
                 >
-                  <Mic size={16} />
+                  <Mic size={18} />
                 </button>
               )}
             </div>
+
             <button
               onClick={() => handleSend()}
               disabled={!inputText.trim() || isTyping}
-              className="p-3 rounded-xl bg-gradient-to-br from-pink-400 to-purple-400 text-white shadow-lg disabled:opacity-30 active:scale-95 transition-transform"
+              className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-br from-pink-400 via-[#FF9ACB] to-purple-400 text-white shadow-lg shadow-pink-200/50 disabled:opacity-30 disabled:shadow-none active:scale-95 transition-all flex-shrink-0"
+              aria-label="Send Message"
             >
-              <Send size={18} />
+              <Send size={18} fill="currentColor" className={inputText.trim() ? "translate-x-0.5" : ""} />
             </button>
           </div>
         </div>
