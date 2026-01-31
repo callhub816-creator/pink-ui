@@ -37,69 +37,69 @@ const SafetyPage: React.FC<PageProps> = ({ onBack }) => {
           </p>
         </div>
 
-        {/* 1. Conversational Safety */}
-        <section className="bg-white/40 border border-white/60 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-3">
-            <Heart size={20} className="text-[#FF9ACB]" />
-            <h3 className="text-lg font-bold text-[#4A2040]">Conversational Safety</h3>
-          </div>
-          <p className="text-sm leading-relaxed opacity-90 text-[#5e3a58]">
-            CallHub AI characters are here to listen, chat, and provide companionship for entertainment purposes. While they offer friendly conversation, please remember they are virtual entities. Interactions should not replace professional medical, legal, or psychological advice from real-world experts.
-          </p>
-        </section>
-
-        {/* 2. Respect & Behavior */}
+        {/* 1. Age Restriction */}
         <section className="bg-white/40 border border-white/60 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-3">
             <UserCheck size={20} className="text-[#B28DFF]" />
-            <h3 className="text-lg font-bold text-[#4A2040]">Respect & Behavior</h3>
+            <h3 className="text-lg font-bold text-[#4A2040]">Age Requirement (18+)</h3>
           </div>
           <p className="text-sm leading-relaxed opacity-90 text-[#5e3a58]">
-            We foster a kind, welcoming space. Users are expected to interact respectfully. Harassment, hate speech, abusive language, or any form of exploitation is strictly prohibited. Treating your AI companion and the community with respect helps keep the platform safe for everyone.
+            CallHub AI is strictly for users aged 18 and older. We maintain a mature environment and enforce this restriction to ensure the platform is used only by those who meet the legal age of majority.
           </p>
         </section>
 
-        {/* 3. Content Restrictions */}
-        <section className="bg-white/40 border border-white/60 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-3">
-            <AlertTriangle size={20} className="text-[#FBBF24]" />
-            <h3 className="text-lg font-bold text-[#4A2040]">Content Restrictions</h3>
-          </div>
-          <p className="text-sm leading-relaxed opacity-90 text-[#5e3a58]">
-            To maintain a safe environment, we do not allow illegal content, depictions of non-consensual violence, or any content involving minors. This service is strictly for users aged 18 and older. Any uploaded photos must adhere to our safe-use policies.
-          </p>
-        </section>
-
-        {/* 4. Privacy Safety */}
-        <section className="bg-white/40 border border-white/60 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-3">
-            <Lock size={20} className="text-[#60A5FA]" />
-            <h3 className="text-lg font-bold text-[#4A2040]">Privacy Safety</h3>
-          </div>
-          <p className="text-sm leading-relaxed opacity-90 text-[#5e3a58]">
-            Protect your personal boundaries. Never share passwords, bank account details, credit card numbers, or government IDs in chat. Our AI characters will <strong>never</strong> ask you for financial information or private documents.
-          </p>
-        </section>
-
-        {/* 5. User Guidelines */}
+        {/* 2. Fictional Interaction */}
         <section className="bg-white/40 border border-white/60 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-3">
             <Sparkles size={20} className="text-[#A78BFA]" />
-            <h3 className="text-lg font-bold text-[#4A2040]">Responsible Use</h3>
+            <h3 className="text-lg font-bold text-[#4A2040]">AI Fictional Characters</h3>
           </div>
           <p className="text-sm leading-relaxed opacity-90 text-[#5e3a58]">
-            AI companionship can be a wonderful source of entertainment, but it cannot diagnose or treat any medical conditions. If you are going through a crisis or need serious help, please reach out to a real-world professional, counselor, or helpline.
+            Users must understand that all characters are fictional creations of artificial intelligence. These interactions are designed for conversational entertainment only and should not be viewed as real-world connections or substitutes for human interaction.
           </p>
         </section>
 
-        {/* 6. User Reporting */}
+        {/* 3. Healthy Engagement */}
+        <section className="bg-white/40 border border-white/60 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <Heart size={20} className="text-[#FF9ACB]" />
+            <h3 className="text-lg font-bold text-[#4A2040]">Healthy Engagement</h3>
+          </div>
+          <p className="text-sm leading-relaxed opacity-90 text-[#5e3a58]">
+            We do not encourage emotional dependency or harmful behaviors. The platform is a space for creative conversation, not for seeking psychological support or medical advice. Please use the platform responsibly.
+          </p>
+        </section>
+
+        {/* 4. No Real-World Facilitation */}
+        <section className="bg-white/40 border border-white/60 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <Lock size={20} className="text-[#60A5FA]" />
+            <h3 className="text-lg font-bold text-[#4A2040]">Virtual Experience Only</h3>
+          </div>
+          <p className="text-sm leading-relaxed opacity-90 text-[#5e3a58]">
+            CallHub AI does not facilitate, encourage, or provide means for real-world interactions, dating, or matchmaking. It is a strictly virtual, digital-only experience designed for interactive entertainment.
+          </p>
+        </section>
+
+        {/* 5. Reporting & Behavior */}
         <section className="bg-white/40 border border-white/60 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-3">
             <Flag size={20} className="text-[#F87171]" />
-            <h3 className="text-lg font-bold text-[#4A2040]">Reporting & Actions</h3>
+            <h3 className="text-lg font-bold text-[#4A2040]">Reporting Misuse</h3>
           </div>
           <p className="text-sm leading-relaxed opacity-90 text-[#5e3a58]">
-            If you encounter misuse, technical exploits, or violations of these guidelines, please report them to our support team. We take safety seriously and reserve the right to suspend or terminate accounts that violate our community standards.
+            We provide tools to report inappropriate behavior or technical issues. We monitor for patterns of misuse and reserve the right to restrict access to users who violate our community standards or conduct policies.
+          </p>
+        </section>
+
+        {/* 6. Professional Disclaimer */}
+        <section className="bg-[#FFF0F5] border border-[#B28DFF]/20 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <AlertTriangle size={20} className="text-[#FBBF24]" />
+            <h3 className="text-lg font-bold text-[#4A2040]">Not a Support Service</h3>
+          </div>
+          <p className="text-sm leading-relaxed opacity-90 text-[#5e3a58]">
+            <strong>This platform is NOT a therapy, counseling, or crisis support service.</strong> If you are experiencing distress or require professional help, please reach out to qualified real-world medical or mental health professionals.
           </p>
         </section>
 

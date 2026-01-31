@@ -32,32 +32,28 @@ const RefundPage: React.FC<PageProps> = ({ onBack }) => {
                 </p>
 
                 <section className="space-y-3">
-                    <h3 className="text-lg font-bold text-[#4A2040]">1. Payments & Digital Credits</h3>
-                    <p className="opacity-90">
-                        CallHub offers digital credits (Hearts) for accessing AI-powered conversational features. Credits are virtual, non-transferable, and have no real-world monetary value.
+                    <h3 className="text-lg font-bold text-[#4A2040]">1. Digital Consumption</h3>
+                    <p className="opacity-90 leading-relaxed">
+                        CallHub AI operates using digital credits that are consumed instantly to access AI-powered features. Once credits are used for chats, calls, or other features, the service is considered fully consumed.
                     </p>
-                    <ul className="space-y-2 list-disc pl-5 opacity-90">
-                        <li>Credits are added <strong>instantly</strong> after successful payment confirmation.</li>
-                        <li>Payments are processed securely via RBI-compliant gateways.</li>
-                    </ul>
                 </section>
 
                 <section className="space-y-4">
                     <div className="bg-[#B28DFF]/5 p-6 rounded-2xl border border-[#B28DFF]/20">
                         <h3 className="text-lg font-bold text-[#4A2040] mb-3">2. Refund Policy</h3>
                         <p className="text-sm opacity-90 leading-relaxed mb-4">
-                            Due to the digital and consumable nature of AI-generated services, <strong>refunds are not provided</strong> once credits are used.
+                            Refunds are not provided for credits that have already been utilized or for active subscription cycles that have been accessed.
                         </p>
                         <p className="text-sm opacity-90 leading-relaxed">
-                            In case of duplicate or failed transactions, eligible refunds will be processed within <strong>5–7 business days</strong> after review.
+                            In the event of a successful payment where credits were not added due to a platform error, or in cases of duplicate transactions, users are eligible for a review.
                         </p>
                     </div>
                 </section>
 
                 <section className="space-y-3">
-                    <h3 className="text-lg font-bold text-[#4A2040]">3. Support & Contact</h3>
-                    <p className="opacity-90">
-                        To request a review for eligible refund cases (duplicate/failed payments), please email <strong>support@callhub.in</strong> with your payment ID within 24 hours.
+                    <h3 className="text-lg font-bold text-[#4A2040]">3. Processing Timeline</h3>
+                    <p className="opacity-90 leading-relaxed">
+                        Eligible refund requests (duplicate or failed additions) will be processed back to the original payment method within <strong>5–7 business days</strong> following internal review and approval.
                     </p>
                 </section>
 
