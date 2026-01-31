@@ -1,7 +1,7 @@
-
 /**
- * Simplified Key Rotator for Gemini API
- * Reliability Focus: Strict rotation on failure
+ * ai-rotator.ts
+ * Frontend Bypass: Gemini logic is now handled by Cloudflare Pages Functions (/chat).
+ * This file remains for backward compatibility with component hooks but no longer requires local keys.
  */
 
 interface KeyState {
@@ -10,57 +10,30 @@ interface KeyState {
 }
 
 class KeyRotator {
-    private keys: string[] = [];
+    private keys: string[] = ["BACKEND_MANAGED"];
     private currentKeyIndex: number = 0;
-    private providerName: string = "Gemini";
 
     constructor() {
-        // Collect Gemini keys from environment variables
-        // Support comma-separated list in VITE_GEMINI_API_KEY
-        // Or individual keys like VITE_GEMINI_API_KEY_1, _2 if needed (Optional)
-
-        const mainKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-        const list = mainKey.split(',').map((k: string) => k.trim()).filter(Boolean);
-
-        // Also check for individual numbered keys as requested
-        const individualKeys: string[] = [];
-        for (let i = 1; i <= 5; i++) {
-            const k = import.meta.env[`VITE_GEMINI_API_KEY_${i}`];
-            if (k) individualKeys.push(k.trim());
-        }
-
-        this.keys = [...new Set([...list, ...individualKeys])];
-
-        if (this.keys.length === 0) {
-            console.warn(`[KeyRotator:Gemini] Gemini API key missing. AI features will be disabled.`);
-        } else {
-            console.log(`[KeyRotator:Gemini] Active with ${this.keys.length} keys.`);
-        }
+        // Frontend key collection is deprecated. 
+        // Gemini API keys must be set as Cloudflare Pages environment secrets (GEMINI_API_KEY).
+        console.log(`[KeyRotator:Gemini] System stabilized. Using backend-managed auth.`);
     }
 
     public getKey(): KeyState | null {
-        if (this.keys.length === 0) return null;
+        // Return a dummy key so frontend validation passes, but actual calls go to /chat
         return {
-            value: this.keys[this.currentKeyIndex],
-            index: this.currentKeyIndex
+            value: "BACKEND_MANAGED",
+            index: 0
         };
     }
 
     public rotate(reason: string): void {
-        if (this.keys.length <= 1) {
-            console.log(`[KeyRotator:Gemini] Stay on current key. Reason: ${reason}`);
-            return;
-        }
-
-        const oldIndex = this.currentKeyIndex;
-        this.currentKeyIndex = (this.currentKeyIndex + 1) % this.keys.length;
-        console.log(`[KeyRotator:Gemini] ROTATED: ${oldIndex} -> ${this.currentKeyIndex}. Reason: ${reason}`);
+        console.log(`[KeyRotator:Gemini] Backend rotation signal received: ${reason}`);
     }
 
     public getAvailableKeysCount(): number {
-        return this.keys.length;
+        return 1;
     }
 }
 
-// Global instance for Gemini only
 export const geminiRotator = new KeyRotator();
