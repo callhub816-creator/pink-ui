@@ -23,67 +23,62 @@ const AgeGate: React.FC = () => {
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-6 select-none animate-in fade-in duration-1000 overflow-hidden">
-            {/* Cinematic Background */}
-            <div className="absolute inset-0 bg-gradient-to-b from-[#1a101d] via-[#0a0a0c] to-[#050505]" />
+            {/* Premium Pink Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#FFF0F5] via-[#FFDEE9] to-[#F3E8FF]" />
 
-            {/* Subtle Radial Glow behind card */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet-600/[0.07] blur-[120px] rounded-full pointer-events-none" />
+            {/* Dynamic Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FF9ACB]/[0.1] blur-[150px] rounded-full pointer-events-none" />
 
-            {/* Glass Card Container */}
-            <div className="bg-[#121215]/40 max-w-md w-full md:rounded-[28px] rounded-[24px] p-8 md:p-12 border border-white/[0.08] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] text-center space-y-8 relative backdrop-blur-3xl overflow-hidden transform animate-in zoom-in-95 duration-700">
-
-                {/* Decorative sheen top-left */}
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
+            {/* Premium Pink Glass Card */}
+            <div className="bg-[#FFFDFE] max-w-md w-full md:rounded-[40px] rounded-[32px] p-8 md:p-12 border border-[#FF9ACB]/20 shadow-[0_50px_100px_-20px_rgba(255,154,203,0.25)] text-center space-y-9 relative backdrop-blur-3xl overflow-hidden transform animate-in zoom-in-95 duration-700">
 
                 {/* Header Section */}
                 <div className="relative space-y-6">
-                    <div className="w-14 h-14 bg-white/[0.03] border border-white/[0.1] md:rounded-[14px] rounded-[12px] flex items-center justify-center mx-auto shadow-2xl relative group overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-50" />
-                        <ShieldCheck size={28} className="text-violet-300 opacity-90 relative z-10" strokeWidth={1.2} />
+                    <div className="w-14 h-14 bg-white border border-[#4A2040]/10 md:rounded-[18px] rounded-[16px] flex items-center justify-center mx-auto shadow-sm relative overflow-hidden">
+                        <ShieldCheck size={28} className="text-[#4A2040] relative z-10" strokeWidth={1.5} />
                     </div>
 
                     <div className="space-y-3">
-                        <h2 className="text-3xl md:text-4xl font-serif-display font-semibold tracking-tight leading-tight">
-                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-white to-violet-200">
-                                Age Confirmation
-                            </span>
+                        <h2 className="text-3xl md:text-4xl font-serif-display font-bold tracking-tight text-[#4A2040]">
+                            Age Confirmation
                         </h2>
-                        <p className="text-slate-400/90 leading-relaxed text-[14px] max-w-[320px] mx-auto font-light">
-                            This platform is intended only for users aged 18 years or older. <br />
-                            By continuing, you confirm that you are at least 18 years of age and understand that all interactions are AI-generated and fictional.
-                        </p>
+                        <div className="space-y-1">
+                            <p className="text-[#5e3a58]/80 text-[14px] font-bold leading-relaxed">
+                                This platform is intended only for users aged 18 years or older.
+                            </p>
+                            <p className="text-[#5e3a58]/60 text-[13px] font-semibold leading-relaxed px-4">
+                                By continuing, you confirm your age and the AI-only nature of this experience.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Confirmations Section */}
-                <div className="space-y-3 pt-1">
-                    <button
-                        onClick={() => setChecks(prev => ({ ...prev, age: !prev.age }))}
-                        className={`w-full flex items-start gap-4 p-4 md:rounded-[18px] rounded-[16px] border transition-all duration-300 text-left cursor-pointer group
-                            ${checks.age ? 'bg-white/[0.04] border-white/[0.12] shadow-inner' : 'bg-transparent border-white/[0.05] hover:border-white/[0.1]'}`}
-                    >
-                        <div className={`w-5 h-5 rounded-full border transition-all duration-500 flex items-center justify-center mt-0.5 shrink-0
-                            ${checks.age ? 'bg-violet-500/30 border-violet-400/50 scale-110' : 'bg-white/[0.02] border-white/[0.15] group-hover:border-white/[0.3]'}`}>
-                            <Check size={12} className={`text-violet-200 transition-all duration-500 ${checks.age ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} strokeWidth={3} />
-                        </div>
-                        <p className={`transition-colors duration-300 text-[14px] leading-snug font-normal ${checks.age ? 'text-slate-200' : 'text-slate-400'}`}>
-                            I confirm that I am at least 18 years of age.
-                        </p>
-                    </button>
-
-                    <button
-                        onClick={() => setChecks(prev => ({ ...prev, ai: !prev.ai }))}
-                        className={`w-full flex items-start gap-4 p-4 md:rounded-[18px] rounded-[16px] border transition-all duration-300 text-left cursor-pointer group
-                            ${checks.ai ? 'bg-white/[0.04] border-white/[0.12] shadow-inner' : 'bg-transparent border-white/[0.05] hover:border-white/[0.1]'}`}
-                    >
-                        <div className={`w-5 h-5 rounded-full border transition-all duration-500 flex items-center justify-center mt-0.5 shrink-0
-                            ${checks.ai ? 'bg-violet-500/30 border-violet-400/50 scale-110' : 'bg-white/[0.02] border-white/[0.15] group-hover:border-white/[0.3]'}`}>
-                            <Check size={12} className={`text-violet-200 transition-all duration-500 ${checks.ai ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} strokeWidth={3} />
-                        </div>
-                        <p className={`transition-colors duration-300 text-[14px] leading-snug font-normal ${checks.ai ? 'text-slate-200' : 'text-slate-400'}`}>
-                            I understand that all characters are AI-generated and fictional.
-                        </p>
-                    </button>
+                {/* Confirmations Section - Precisely matching user screenshot */}
+                <div className="space-y-4">
+                    {[
+                        { key: 'age', label: 'I confirm that I am at least 18 years of age.' },
+                        { key: 'ai', label: 'I understand that all encounters are AI-generated and fictional.' }
+                    ].map((item) => (
+                        <button
+                            key={item.key}
+                            onClick={() => setChecks(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof checks] }))}
+                            className={`w-full flex items-center gap-4 px-6 py-5 rounded-[24px] border-2 transition-all duration-300 text-left cursor-pointer group
+                                ${checks[item.key as keyof typeof checks]
+                                    ? 'bg-[#FF9ACB]/10 border-black shadow-sm'
+                                    : 'bg-white border-black hover:bg-white/90'}`}
+                        >
+                            <div className={`w-6 h-6 rounded-full border-2 transition-all duration-500 flex items-center justify-center shrink-0
+                                ${checks[item.key as keyof typeof checks]
+                                    ? 'bg-black border-black'
+                                    : 'bg-white border-black/10'}`}>
+                                <div className={`w-2 h-2 rounded-full bg-white transition-all duration-500 scale-150
+                                    ${checks[item.key as keyof typeof checks] ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
+                            </div>
+                            <p className={`transition-colors duration-300 text-[13px] leading-snug font-bold ${checks[item.key as keyof typeof checks] ? 'text-black' : 'text-[#5e3a58]/70'}`}>
+                                {item.label}
+                            </p>
+                        </button>
+                    ))}
                 </div>
 
                 {/* CTA Section */}
@@ -91,22 +86,19 @@ const AgeGate: React.FC = () => {
                     <button
                         onClick={handleAgree}
                         disabled={!checks.age || !checks.ai}
-                        className={`group relative w-full py-4 md:rounded-[14px] rounded-[12px] font-medium tracking-wide transition-all duration-500 active:scale-[0.97]
+                        className={`group relative w-full h-16 rounded-[24px] font-black uppercase tracking-[0.15em] transition-all duration-500 active:scale-[0.98]
                             ${checks.age && checks.ai
-                                ? 'bg-gradient-to-tr from-violet-700 via-violet-600 to-rose-500/80 text-white shadow-[0_10px_30px_-10px_rgba(124,58,237,0.4)] hover:shadow-[0_15px_40px_-10px_rgba(124,58,237,0.6)] hover:-translate-y-0.5'
-                                : 'bg-white/[0.05] text-slate-500 border border-white/[0.05] cursor-not-allowed opacity-80'}`}
+                                ? 'bg-black text-white shadow-xl hover:-translate-y-1'
+                                : 'bg-black/5 text-black/20 cursor-not-allowed'}`}
                     >
-                        <span className="relative z-10 transition-transform group-hover:scale-105 inline-block">Confirm & Continue</span>
-                        {checks.age && checks.ai && (
-                            <div className={`absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity md:rounded-[14px] rounded-[12px] blur-lg`} />
-                        )}
+                        <span className="relative z-10 text-[15px]">Confirm & Continue</span>
                     </button>
 
-                    {/* Footer Microcopy */}
+                    {/* Branding Bar */}
                     <div className="flex flex-col items-center gap-3">
-                        <div className="h-px w-12 bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
-                        <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-semibold opacity-70">
-                            Private • Secure • AI-Generated Content
+                        <div className="h-0.5 w-12 bg-black/5 rounded-full" />
+                        <p className="text-[10px] text-black/30 uppercase tracking-[0.5em] font-black">
+                            CallHub AI
                         </p>
                     </div>
                 </div>
