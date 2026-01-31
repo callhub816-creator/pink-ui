@@ -34,7 +34,7 @@ const TermsPage: React.FC<PageProps> = ({ onBack }) => {
         <section className="space-y-3">
           <h3 className="text-lg font-bold text-[#4A2040]">1. Eligibility (18+)</h3>
           <p className="opacity-90">
-            This service is strictly for individuals <strong>aged 18 or older</strong>. By signing up, you represent that you meet this age requirement.
+            This platform is intended only for users aged 18 years or older. By continuing, you represent that you meet this age requirement and understand that all interactions are AI-generated and fictional.
           </p>
         </section>
 
@@ -58,24 +58,29 @@ const TermsPage: React.FC<PageProps> = ({ onBack }) => {
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-lg font-bold text-[#4A2040]">4. Payments & Refunds</h3>
-          <div className="bg-[#B28DFF]/5 p-4 rounded-xl border border-[#B28DFF]/10">
-            <p className="text-sm opacity-90 mb-2">
-              Payments are handled via secure RBI-compliant payment gateways.
+          <h3 className="text-lg font-bold text-[#4A2040]">4. Payments & Digital Credits</h3>
+          <div className="bg-[#B28DFF]/5 p-4 rounded-xl border border-[#B28DFF]/10 space-y-4">
+            <p className="text-sm opacity-90 leading-relaxed">
+              CallHub offers digital credits for accessing AI-powered conversational features. Credits are virtual, non-transferable, and have no real-world monetary value.
             </p>
             <ul className="space-y-2 text-sm list-disc pl-5 opacity-90">
-              <li>Digital credits (Hearts) are added <strong>instantly</strong> upon successful transaction.</li>
-              <li>Since this is a consumed digital service, <strong>no refunds</strong> are provided after the usage of purchased credits.</li>
-              <li>Duplicate transactions will be reviewed and refunded within 5-7 business days.</li>
+              <li>Credits (Hearts) are added <strong>instantly</strong> after successful payment confirmation.</li>
+              <li>Due to the digital and consumable nature of AI-generated services, <strong>refunds are not provided</strong> once credits are used.</li>
+              <li>Duplicate or failed transactions will be reviewed and refunded within <strong>5-7 business days</strong>.</li>
             </ul>
           </div>
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-lg font-bold text-[#4A2040]">5. Liability Disclaimer</h3>
-          <p className="opacity-90">
-            CallHub AI is provided "as-is". We are not liable for any emotional outcomes, data loss, or server interruptions. Users assume all responsibility for their interactions.
-          </p>
+          <h3 className="text-lg font-bold text-[#4A2040]">5. Liability & Disclaimers</h3>
+          <div className="space-y-3 opacity-90 text-sm">
+            <p>
+              CallHub AI is provided "as-is". We are not liable for any emotional outcomes, data loss, or server interruptions. Users assume all responsibility for their interactions.
+            </p>
+            <p className="font-bold border-t border-[#B28DFF]/10 pt-3">
+              CallHub does not provide mental health support, therapy, counseling, or professional advice. Users should not rely on this platform as a substitute for real-world relationships or professional services.
+            </p>
+          </div>
         </section>
 
         <section className="space-y-3 bg-white/50 p-6 rounded-2xl border border-white/60">

@@ -48,8 +48,9 @@ const AgeGate: React.FC = () => {
                                 Age Confirmation
                             </span>
                         </h2>
-                        <p className="text-slate-400/90 leading-relaxed text-[15px] max-w-[280px] mx-auto font-light">
-                            This platform is intended for adults (18+) and is designed for conversational entertainment purposes only.
+                        <p className="text-slate-400/90 leading-relaxed text-[14px] max-w-[320px] mx-auto font-light">
+                            This platform is intended only for users aged 18 years or older. <br />
+                            By continuing, you confirm that you are at least 18 years of age and understand that all interactions are AI-generated and fictional.
                         </p>
                     </div>
                 </div>

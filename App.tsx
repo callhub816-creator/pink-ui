@@ -299,21 +299,45 @@ const AppContent: React.FC = () => {
           </div>
         </div>
 
-        <footer className="w-full bg-[#FBF9FB] text-[#6B5E6B] py-7 px-6 font-sans border-t border-black/5 relative z-10 transition-colors duration-300">
-          <div className="max-w-[1200px] mx-auto flex flex-col items-center text-center space-y-4">
+        {/* GLOBAL DISCLAIMER BLOCK */}
+        <div className="w-full bg-white/50 border-t border-[#B28DFF]/10 py-12 px-6 relative z-10">
+          <div className="max-w-2xl mx-auto text-center space-y-8">
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-[#4A2040] uppercase tracking-widest">Important Notice</h3>
+              <p className="text-xs text-[#5e3a58]/80 leading-relaxed">
+                CallHub is an AI-powered conversational entertainment platform. <br />
+                All characters, conversations, and interactions are entirely AI-generated and fictional. <br />
+                There are no real humans, relationships, dating services, or emotional dependencies involved. <br />
+                This platform is intended strictly for entertainment purposes only.
+              </p>
+            </div>
+
+            <div className="h-px w-12 bg-[#B28DFF]/20 mx-auto" />
+
+            <div className="space-y-3">
+              <p className="text-[10px] text-[#5e3a58]/60 leading-relaxed uppercase font-semibold tracking-wide">
+                CallHub does not provide mental health support, therapy, counseling, or professional advice. <br />
+                Users should not rely on this platform as a substitute for real-world relationships or professional services.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <footer className="w-full bg-[#FBF9FB] text-[#6B5E6B] py-8 px-6 font-sans border-t border-black/5 relative z-10 transition-colors duration-300">
+          <div className="max-w-[1200px] mx-auto flex flex-col items-center text-center space-y-5">
 
             {/* 1. Brand Header & Tagline */}
             <div className="space-y-1">
-              <div className="text-[15px] font-normal tracking-[0.2em] text-[#4A2040] uppercase">
+              <div className="text-[14px] font-bold tracking-[0.2em] text-[#4A2040] uppercase">
                 CallHub AI
               </div>
-              <p className="text-[12px] font-normal text-[#615461]/70">
-                Private AI companion for conversation and entertainment.
+              <p className="text-[11px] font-medium text-[#615461]/70">
+                Private AI-powered platform for conversational entertainment.
               </p>
             </div>
 
             {/* 2. Navigation Links */}
-            <nav className="flex flex-wrap justify-center items-center gap-x-8 gap-y-2 text-[13px] font-medium text-[#4A2040]/80">
+            <nav className="flex flex-wrap justify-center items-center gap-x-8 gap-y-2 text-[12px] font-bold text-[#4A2040]/80">
               {[
                 { label: 'Privacy', action: () => setCurrentPage('privacy') },
                 { label: 'Terms', action: () => setCurrentPage('terms') },
@@ -334,12 +358,23 @@ const AppContent: React.FC = () => {
             </nav>
 
             {/* 3. Legal & Compliance */}
-            <div className="space-y-1.5 opacity-50">
-              <p className="text-[10px] font-normal tracking-wide">
-                Payments processed via RBI-compliant payment gateways.
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-[#4A2040]/40 tracking-wide uppercase">
+                Payments are processed via RBI-compliant payment gateways.
               </p>
-              <p className="text-[10px] font-normal tracking-tight">
-                18+ AI companion platform • All characters are fictional • © 2026 CallHub AI
+              <div className="space-y-1">
+                <p className="text-[10px] font-medium text-[#4A2040]/60 tracking-tight">
+                  © 2026 CallHub AI. All rights reserved.
+                </p>
+                <p className="text-[9px] font-bold text-[#4A2040]/40 uppercase tracking-tighter">
+                  18+ only • AI-generated content • All characters are fictional
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <p className="text-[9px] font-bold text-[#4A2040]/30 lowercase tracking-widest italic font-sans opacity-60">
+                This service does not facilitate real-world interaction, dating, or matchmaking.
               </p>
             </div>
 
