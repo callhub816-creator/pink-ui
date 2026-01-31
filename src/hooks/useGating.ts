@@ -24,7 +24,7 @@ export const useGating = () => {
             if (Date.now() < expiry) return false;
         }
 
-        return (profile.messageCountToday || 0) >= 30;
+        return (profile.messageCountToday || 0) >= 15;
     };
 
     const isNightTimeLocked = () => {
@@ -57,11 +57,21 @@ export const useGating = () => {
     };
 
     const isPersonaLocked = (personaId: string | number) => {
-        return false; // Disabled for testing
+        if (profile.subscription !== 'free') return false;
+
+        // Personas with ID > 2 are premium/locked for free users
+        const id = typeof personaId === 'string' ? parseInt(personaId) : personaId;
+        return id > 2;
     };
 
     const canAccessMode = (modeTitle: string) => {
-        return true; // All modes active as requested
+        if (profile.subscription !== 'free') return true;
+
+        // Check if the user has unlocked this specific mode via Hearts/Digital Credits
+        if (profile.unlockedModes && profile.unlockedModes.includes(modeTitle)) return true;
+
+        // Only 'Interactive Chat' is free by default
+        return modeTitle === 'Interactive Chat';
     };
 
     const canCall = () => {

@@ -185,7 +185,7 @@ export const storage = {
       lastActive: new Date().toISOString(),
       voiceMinutesLeft: 0,
       unlockedModes: [],
-      hearts: 500, // 500 Hearts for testing unlocks
+      hearts: 20, // Reduced from 500 (test mode) to 20 for production gating
       midnightPassExpiry: undefined,
       sessionsCount: 0
     };
