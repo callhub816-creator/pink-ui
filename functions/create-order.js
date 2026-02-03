@@ -37,7 +37,10 @@ export async function onRequestPost({ request, env }) {
             }), { status: razorpayRes.status, headers: { "Content-Type": "application/json" } });
         }
 
-        return new Response(JSON.stringify(orderData), {
+        return new Response(JSON.stringify({
+            ...orderData,
+            key_id: keyId // Send key to frontend dynamically
+        }), {
             headers: { "Content-Type": "application/json" }
         });
 

@@ -47,10 +47,8 @@ export const initiatePayment = async (options: {
         return;
     }
 
-    const rzpKey = "rzp_live_SBV0Agc22zjrWR";
-
     const razorpayOptions = {
-        key: rzpKey,
+        key: order.key_id, // Get dynamic key from backend order response
         amount: order.amount,
         currency: order.currency,
         name: "CallHub AI",
