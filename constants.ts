@@ -87,6 +87,7 @@ export const GIFT_ITEMS: Gift[] = [
 ];
 
 export const HEARTS_PACKS = [
+  { id: 'hearts_test', name: 'Test Spark', hearts: 10, price: 10 },
   { id: 'hearts_100', name: 'Small Spark', hearts: 100, price: 99 },
   { id: 'hearts_300', name: 'Growing Flame', hearts: 300, price: 249 },
   { id: 'hearts_650', name: 'Inner Glow', hearts: 650, price: 499, bonus: '30%' },
