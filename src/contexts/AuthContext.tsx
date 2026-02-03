@@ -81,9 +81,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       name: user?.email?.split('@')[0] || "Guest User",
       description: `Purchase ${amount} Hearts (CallHub)`,
       userEmail: user?.email || "support@callhub.in",
-      onSuccess: () => {
-        storage.addHearts(amount);
-        refreshProfile();
+      onSuccess: async (response: any) => {
+        try {
+          const verifyRes = await fetch('/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...response,
+              amount: pack.hearts,
+              type: 'hearts'
+            })
+          });
+
+          if (verifyRes.ok) {
+            storage.addHearts(amount);
+            refreshProfile();
+            alert(`Successful! Added ${amount} Hearts. ❤️`);
+          } else {
+            alert("Payment verification failed. Please contact support.");
+          }
+        } catch (err) {
+          console.error("Verification error", err);
+          alert("Verification error. Your hearts will be updated once processed.");
+        }
       },
       onFailure: (err) => {
         console.error("Payment failed", err);
@@ -221,11 +241,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       name: user?.email?.split('@')[0] || "Guest User",
       description: `Upgrade to ${plan.toUpperCase()} Plan`,
       userEmail: user?.email || "support@callhub.in",
-      onSuccess: () => {
-        const profile = storage.getProfile();
-        profile.subscription = plan;
-        storage.saveProfile(profile);
-        refreshProfile();
+      onSuccess: async (response: any) => {
+        try {
+          const verifyRes = await fetch('/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...response,
+              type: 'subscription',
+              plan: plan
+            })
+          });
+
+          if (verifyRes.ok) {
+            const profile = storage.getProfile();
+            profile.subscription = plan;
+            storage.saveProfile(profile);
+            refreshProfile();
+            alert(`Welcome to ${plan.toUpperCase()}! Your premium features are now active.`);
+          } else {
+            alert("Subscription verification failed. Please contact support.");
+          }
+        } catch (err) {
+          console.error("Verification error", err);
+        }
       },
       onFailure: (err) => {
         console.error("Upgrade failed", err);
@@ -243,13 +282,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       name: user?.email?.split('@')[0] || "Guest User",
       description: "Midnight Pass (One Night Access)",
       userEmail: user?.email || "support@callhub.in",
-      onSuccess: () => {
-        const profile = storage.getProfile();
-        const expiry = new Date();
-        expiry.setHours(23, 59, 59, 999);
-        profile.midnightPassExpiry = expiry.toISOString();
-        storage.saveProfile(profile);
-        refreshProfile();
+      onSuccess: async (response: any) => {
+        try {
+          const verifyRes = await fetch('/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...response,
+              type: 'midnight_pass'
+            })
+          });
+
+          if (verifyRes.ok) {
+            const profile = storage.getProfile();
+            const expiry = new Date();
+            expiry.setHours(23, 59, 59, 999);
+            profile.midnightPassExpiry = expiry.toISOString();
+            storage.saveProfile(profile);
+            refreshProfile();
+            alert("Midnight Pass Activated! Fast replies and unlimited chat enabled for tonight.");
+          } else {
+            alert("Verification failed. Please try again.");
+          }
+        } catch (err) {
+          console.error("Verification error", err);
+        }
       },
       onFailure: (err) => {
         console.error("Pass purchase failed", err);
