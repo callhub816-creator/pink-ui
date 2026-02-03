@@ -548,7 +548,9 @@ RULES:
       const isRateLimit = err.message?.includes('429');
       const errorText = isRateLimit
         ? "I'm a bit overwhelmed with so many thoughts right now... give me a minute? ❤️"
-        : (FALLBACK_REPLIES[persona.name] || FALLBACK_REPLIES.Default);
+        : (err.message.includes('API key') || err.message.includes('Brain')
+          ? `Memory Issue: ${err.message}`
+          : (FALLBACK_REPLIES[persona.name] || FALLBACK_REPLIES.Default));
 
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
