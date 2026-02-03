@@ -9,9 +9,9 @@ export async function onRequestPost({ request, env }) {
             context
         } = await request.json();
 
-        if (!razorpay_payment_id || !razorpay_signature) {
+        if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
             return new Response(
-                JSON.stringify({ error: "Missing payment_id or signature" }),
+                JSON.stringify({ error: "Missing payment_id, order_id or signature" }),
                 { status: 400 }
             );
         }
@@ -24,9 +24,7 @@ export async function onRequestPost({ request, env }) {
             );
         }
 
-        const payload = razorpay_order_id
-            ? `${razorpay_order_id}|${razorpay_payment_id}`
-            : razorpay_payment_id;
+        const payload = `${razorpay_order_id}|${razorpay_payment_id}`;
 
         const key = await crypto.subtle.importKey(
             "raw",
