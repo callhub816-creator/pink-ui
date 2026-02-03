@@ -757,6 +757,8 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
             <div className="space-y-4">
               <button onClick={() => { upgradeSubscription('plus'); setShowPaywall(false); }} className="w-full py-4 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-full font-black shadow-lg hover:scale-105 transition-transform">Always be here (₹499)</button>
 
+              <button onClick={() => { upgradeSubscription('testTrial'); setShowPaywall(false); }} className="w-full py-3 bg-white border-2 border-dashed border-[#B28DFF] text-[#B28DFF] rounded-2xl font-black text-sm hover:bg-[#B28DFF]/5 transition-colors">Support & Test (₹10)</button>
+
               <div className="relative py-4 px-6 rounded-3xl bg-pink-50 border border-pink-100 border-dashed">
                 <p className="text-[10px] font-bold text-pink-500 uppercase tracking-widest mb-2">Deepen our connection</p>
                 <button onClick={() => { upgradeSubscription('basic'); setShowPaywall(false); }} className="w-full py-3 bg-white text-pink-500 rounded-2xl font-black text-sm border border-pink-200 shadow-sm hover:bg-pink-100 transition-colors">7-Day Bond (₹199)</button>

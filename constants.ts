@@ -71,6 +71,7 @@ export const GATING_CONFIG = {
     trusted: 1000
   },
   prices: {
+    testTrial: 10,
     basic: 199,
     plus: 499,
     midnightPass: 99,

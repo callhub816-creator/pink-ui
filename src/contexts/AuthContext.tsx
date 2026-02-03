@@ -29,7 +29,7 @@ type AuthContextType = {
   buyMidnightPass: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
@@ -326,4 +326,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export default AuthContext;
+
