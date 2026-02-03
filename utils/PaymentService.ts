@@ -22,7 +22,7 @@ export const initiatePayment = async (options: {
     const isLoaded = await loadRazorpay();
 
     if (!isLoaded) {
-        alert('Razorpay SDK failed to load. Are you online?');
+        alert('Razorpay SDK failed to load. Please check your internet connection.');
         return;
     }
 
@@ -34,11 +34,16 @@ export const initiatePayment = async (options: {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount: options.amount * 100 })
         });
-        if (!orderRes.ok) throw new Error("Order creation failed");
-        order = await orderRes.json();
-    } catch (err) {
+
+        const data = await orderRes.json();
+
+        if (!orderRes.ok) {
+            throw new Error(data.detail?.error?.description || data.error || "Order creation failed");
+        }
+        order = data;
+    } catch (err: any) {
         console.error("Payment Error:", err);
-        alert("Could not initiate payment. Please try again.");
+        alert(`Payment Initialization Failed: ${err.message}`);
         return;
     }
 
@@ -50,10 +55,9 @@ export const initiatePayment = async (options: {
         currency: order.currency,
         name: "CallHub AI",
         description: options.description,
-        order_id: order.id, // IMPORTANT: Linking valid order
+        order_id: order.id,
         image: "https://your-logo-url.com/logo.png",
         handler: function (response: any) {
-            // Sends PaymentID, OrderID, and Signature for verification
             options.onSuccess(response);
         },
         prefill: {
