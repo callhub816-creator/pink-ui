@@ -10,10 +10,10 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // Determine model based on user tier as per strict requirements
-        // FREE users -> gemini-2.0-flash
-        // PREMIUM users -> gemini-2.5-pro
-        const modelId = userMode === "PREMIUM" ? "gemini-2.5-pro" : "gemini-2.0-flash";
+        // Determine model based on user tier
+        // FREE users -> gemini-1.5-flash
+        // PREMIUM users -> gemini-1.5-pro
+        const modelId = userMode === "PREMIUM" ? "gemini-1.5-pro" : "gemini-1.5-flash";
 
         // Use v1beta for Gemini 2.x support
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
