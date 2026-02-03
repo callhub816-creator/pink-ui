@@ -16,8 +16,6 @@ export async function onRequestPost({ request, env }) {
         // but for PROD we assume order_id or simple payment_id check.
         // Razorpay Docs: https://razorpay.com/docs/payments/web/test-integration/#step-5-verify-payment-signature
 
-        let isValid = false;
-
         if (razorpay_order_id && razorpay_signature) {
             // Standard order-based verification
             const text = razorpay_order_id + "|" + razorpay_payment_id;
@@ -30,20 +28,27 @@ export async function onRequestPost({ request, env }) {
                 ["sign"]
             );
             const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(text));
-            const generatedSignature = Array.from(new Uint8Array(signatureBuffer))
+            const Uint8ArrayGeneratedSignature = new Uint8Array(signatureBuffer);
+            const generatedSignature = Array.from(Uint8ArrayGeneratedSignature)
                 .map(b => b.toString(16).padStart(2, "0"))
                 .join("");
 
-            isValid = (generatedSignature === razorpay_signature);
+            let isValid = (generatedSignature === razorpay_signature);
+            if (!isValid) {
+                return new Response(JSON.stringify({
+                    error: "Invalid signature",
+                    debug: { received: razorpay_signature, generated: generatedSignature }
+                }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
         } else if (razorpay_payment_id) {
-            // Fallback for simple integration if order_id is missing
-            // In a real prod setup, you'd call Razorpay API to verify the payment_id status
-            // For now, we trust the secure env if secret is present and payment_id exists
-            isValid = true;
-        }
-
-        if (!isValid) {
-            return new Response(JSON.stringify({ error: "Invalid payment signature." }), {
+            // Simple integration (no order_id pre-created)
+            // In full production, you should verify this payment_id via Razorpay API
+            // For now, if the secret is configured, we accept the client-side success
+        } else {
+            return new Response(JSON.stringify({ error: "Missing razorpay_payment_id in request." }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" },
             });

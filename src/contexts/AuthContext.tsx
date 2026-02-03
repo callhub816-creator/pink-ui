@@ -98,7 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             refreshProfile();
             alert(`Successful! Added ${amount} Hearts. ❤️`);
           } else {
-            alert("Payment verification failed. Please contact support.");
+            const errData = await verifyRes.json().catch(() => ({}));
+            alert(`Payment verification failed: ${errData.error || 'Unknown Error'}. Please contact support.`);
           }
         } catch (err) {
           console.error("Verification error", err);
@@ -260,7 +261,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             refreshProfile();
             alert(`Welcome to ${plan.toUpperCase()}! Your premium features are now active.`);
           } else {
-            alert("Subscription verification failed. Please contact support.");
+            const errData = await verifyRes.json().catch(() => ({}));
+            alert(`Subscription verification failed: ${errData.error || 'Unknown Error'}. Please contact support.`);
           }
         } catch (err) {
           console.error("Verification error", err);
@@ -302,7 +304,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             refreshProfile();
             alert("Midnight Pass Activated! Fast replies and unlimited chat enabled for tonight.");
           } else {
-            alert("Verification failed. Please try again.");
+            const errData = await verifyRes.json().catch(() => ({}));
+            alert(`Verification failed: ${errData.error || 'Unknown Error'}. Please try again.`);
           }
         } catch (err) {
           console.error("Verification error", err);
