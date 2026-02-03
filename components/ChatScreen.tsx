@@ -746,14 +746,15 @@ RULES:
               <GiftIcon size={18} />
             </button>
 
-            <div className="flex-1 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/10 focus-within:border-[#B28DFF]/30 transition-all">
+            <div className={`flex-1 flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all ${isDarkMode ? 'bg-white/5 border-white/10 focus-within:border-[#B28DFF]/50' : 'bg-gray-50 border-gray-100 focus-within:border-[#B28DFF]/30'}`}>
               <input
                 type="text"
                 placeholder={`Message ${persona.name}...`}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                className="flex-1 bg-transparent border-none outline-none text-[14px] md:text-[15px] font-medium text-[#4A2040] dark:text-white placeholder:text-[#8e6a88]/40"
+                className={`flex-1 bg-transparent border-none outline-none text-[14px] md:text-[15px] font-medium leading-normal ${isDarkMode ? 'text-white placeholder:text-white/30' : 'text-[#4A2040] placeholder:text-[#4A2040]/40'}`}
+                style={{ caretColor: isDarkMode ? '#FFFFFF' : '#B28DFF' }}
               />
               {!inputText && (
                 <button
