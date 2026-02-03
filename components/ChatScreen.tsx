@@ -392,12 +392,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, avatarUrl, onBack, onS
 
     const memoryHeader = `
 --------------------------------
-MEMORY HEADER (FOR YOUR CONTEXT ONLY)
+PERSISTENT MEMORY (FOR YOUR CONTEXT ONLY)
 --------------------------------
-User usually chats at ${userMemory.preferredTime || preferredTime}.
-Last topic: ${userMemory.lastTopic || 'None'}.
-Last emotional tone: ${userMemory.lastMood || 'Neutral'}.
-Reference subtly if relevant. Do NOT reveal you are reading data.
+1. TIME PREFERENCE: User usually chats at ${userMemory.preferredTime || preferredTime}.
+2. PREVIOUS CONTEXT: ${userMemory.lastMood || 'Neutral'} vibe about ${userMemory.lastTopic || 'Nothing yet'}.
+3. USER FACTS (MANDATORY TO REMEMBER):
+${(userMemory.facts && userMemory.facts.length > 0) ? userMemory.facts.map((f: string, i: number) => `   - ${f}`).join('\n') : "   - No facts known yet."}
+
+RULES:
+- Reference these facts subtly to show you remember them. 
+- NEVER tell the user "I have this in my memory". Make it feel natural.
+- If they say "Do you remember my dog's name?", and it's in the facts, answer correctly!
       `;
 
     // --- TASK 3: TOKEN CONTROL ---
@@ -504,7 +509,32 @@ Reference subtly if relevant. Do NOT reveal you are reading data.
         setMessages(prev => [...prev, modelMsg]);
         storage.saveMessage(persona.id, { ...modelMsg, timestamp: modelMsg.timestamp.toISOString() });
 
-        // Update Memory
+        // Update Memory & Extract Facts
+        const currentMessagesCount = messages.length + 1;
+        const shouldExtractFacts = currentMessagesCount % 5 === 0;
+
+        if (shouldExtractFacts) {
+          const extractionPrompt = `Based on the message: "${text}" and my reply: "${responseText}", extract any new specific facts about the user (name, age, city, job, likes, dislikes). Format each fact as "User loves coffee" or "User lives in Mumbai". Return ONLY the facts separated by semicolons, or "NONE" if nothing new.`;
+
+          fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: extractionPrompt,
+              systemPrompt: "You are a memory processor. extract only raw facts. No conversation.",
+              history: [],
+              userMode: 'FREE' // Save tokens, use smaller model for logic
+            })
+          }).then(res => res.json()).then(data => {
+            if (data.text && data.text !== "NONE") {
+              const newFacts = data.text.split(';').map((f: string) => f.trim()).filter((f: string) => f.length > 5);
+              if (newFacts.length > 0) {
+                storage.saveMemory(persona.id, { facts: newFacts });
+              }
+            }
+          }).catch(e => console.warn("Fact extraction failed", e));
+        }
+
         storage.saveMemory(persona.id, {
           lastMood: responseText.length > 150 ? 'Deeply connected' : 'Warm',
           lastTopic: text.substring(0, 30),

@@ -257,12 +257,18 @@ export const storage = {
       const raw = localStorage.getItem(`memory_${companionId}`);
       if (raw) return JSON.parse(raw);
     } catch (e) { }
-    return { lastMood: 'neutral', lastTopic: 'none', preferredTime: 'unknown' };
+    return { lastMood: 'neutral', lastTopic: 'none', preferredTime: 'unknown', facts: [] };
   },
 
-  saveMemory: (companionId: string | number, data: { lastMood?: string, lastTopic?: string, preferredTime?: string }) => {
+  saveMemory: (companionId: string | number, data: { lastMood?: string, lastTopic?: string, preferredTime?: string, facts?: string[] }) => {
     const current = storage.getMemory(companionId);
-    localStorage.setItem(`memory_${companionId}`, JSON.stringify({ ...current, ...data }));
+    // If facts are provided, we should probably deduplicate or manage them carefully.
+    // For now, we'll just merge them if provided.
+    const updated = { ...current, ...data };
+    if (data.facts) {
+      updated.facts = Array.from(new Set([...(current.facts || []), ...data.facts])).slice(-20); // Keep last 20 facts
+    }
+    localStorage.setItem(`memory_${companionId}`, JSON.stringify(updated));
   },
 
   // --- TASK 3: TOKEN CONTROL ---
