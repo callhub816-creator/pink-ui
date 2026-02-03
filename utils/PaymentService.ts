@@ -47,7 +47,7 @@ export const initiatePayment = async (options: {
         return;
     }
 
-    const rzpKey = "rzp_live_SASJuIbktThdAO";
+    const rzpKey = "rzp_live_SBV0Agc22zjrWR";
 
     const razorpayOptions = {
         key: rzpKey,
