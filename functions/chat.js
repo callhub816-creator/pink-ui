@@ -2,55 +2,63 @@ export async function onRequestPost({ request, env }) {
     try {
         const { message, systemPrompt, history } = await request.json();
 
-        // 1. Get and Clean the key
-        let apiKey = env.GEMINI_API_KEY || "";
-        apiKey = apiKey.trim();
+        // 1. Check for SambaNova API Key
+        // Priority: SAMBANOVA_API_KEY if exists, otherwise fallback to GEMINI_API_KEY (if user reused the same name)
+        const apiKey = (env.SAMBANOVA_API_KEY || env.GEMINI_API_KEY || "").trim();
 
-        if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
-            return new Response(JSON.stringify({ error: "Cloudflare Settings mein 'GEMINI_API_KEY' set karke redeploy karein." }), { status: 500 });
+        if (!apiKey) {
+            return new Response(JSON.stringify({ error: "SambaNova API Key missing. Please add 'SAMBANOVA_API_KEY' in Cloudflare settings." }), { status: 401 });
         }
 
-        // 2. Try v1beta as it's the most compatible for generative models
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // 2. Setup SambaNova Config
+        const API_URL = "https://api.sambanova.ai/v1/chat/completions";
+        const MODEL_ID = "Meta-Llama-3.1-70B-Instruct-Turbo"; // High performance model
 
-        // 3. Super Simple Payload (No advanced fields)
+        // 3. Format Messages for OpenAI compatibility
+        const messages = [
+            { role: "system", content: systemPrompt },
+            ...(history || []).map(m => ({
+                role: m.role === "user" ? "user" : "assistant",
+                content: String(m.text || "")
+            })),
+            { role: "user", content: String(message) }
+        ];
+
         const payload = {
-            contents: [
-                {
-                    role: "user",
-                    parts: [{ text: `Persona: ${systemPrompt}\nUser: ${message}` }]
-                }
-            ],
-            generationConfig: {
-                maxOutputTokens: 300,
-                temperature: 0.8
-            }
+            model: MODEL_ID,
+            messages: messages,
+            max_tokens: 800,
+            temperature: 0.8,
+            top_p: 0.9
         };
 
+        // 4. Send Request 
         const response = await fetch(API_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
             body: JSON.stringify(payload)
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            // Detailed Logging for you to see in the Console
             return new Response(JSON.stringify({
-                error: `Google API Error: ${data.error?.message || "Check Key"}`,
-                status: response.status,
-                endpoint: "v1beta"
+                error: `SambaNova Error: ${data.error?.message || "API Failure"}`,
+                status: response.status
             }), { status: response.status });
         }
 
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response...";
+        // 5. Extract Reply
+        const replyText = data.choices?.[0]?.message?.content || "I'm speachless right now...";
 
-        return new Response(JSON.stringify({ text: reply }), {
+        return new Response(JSON.stringify({ text: replyText }), {
             headers: { "Content-Type": "application/json" }
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: "Function Crash: " + error.message }), { status: 500 });
+        return new Response(JSON.stringify({ error: "Backend Crash: " + error.message }), { status: 500 });
     }
 }
