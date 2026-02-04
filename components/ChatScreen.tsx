@@ -16,6 +16,7 @@ interface ChatScreenProps {
   onStartCall: () => void;
   isDarkMode: boolean;
   setIsDarkMode: (val: boolean) => void;
+  onOpenShop: () => void;
 }
 
 interface Message {
@@ -26,13 +27,25 @@ interface Message {
   isError?: boolean;
 }
 
-const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, isDarkMode }) => {
+const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, isDarkMode, onOpenShop }) => {
   const { profile, incrementUsage, buyStarterPass } = useAuth();
   const { isMessageLimitReached, isNightTimeLocked } = useGating();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Load history but NO auto-greeting if empty
+  useEffect(() => {
+    const saved = storage.getMessages(persona.id);
+    if (saved.length > 0) {
+      setMessages(saved.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })));
+    }
+  }, [persona.id]);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, isTyping]);
 
   const handleSend = async (resendText?: string) => {
     const text = resendText || inputText;
@@ -160,13 +173,19 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
             </div>
             <div>
               <h2 className="font-bold text-sm">{persona.name}</h2>
-              <span className="text-[10px] opacity-60 italic">Online & Thinking...</span>
+              <span className="text-[10px] opacity-60 italic">Online</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <WalletWidget isDarkMode={isDarkMode} />
-          <button onClick={onStartCall} className="p-2.5 rounded-full bg-pink-500 text-white shadow-lg"><Phone size={20} /></button>
+          <WalletWidget isDarkMode={isDarkMode} onOpenShop={onOpenShop} />
+          <button
+            onClick={() => { }} // Disabled as requested
+            className="p-2.5 rounded-full bg-pink-100/50 text-pink-400 cursor-not-allowed border border-pink-200"
+            title="Premium Connection Required"
+          >
+            <Phone size={20} />
+          </button>
         </div>
       </header>
 
@@ -199,7 +218,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
       {/* Input */}
       <footer className={`p-4 pb-8 ${isDarkMode ? 'bg-[#0B0E14]' : 'bg-white'} border-t ${isDarkMode ? 'border-white/10' : 'border-pink-50'}`}>
         <div className="flex items-center gap-2 max-w-2xl mx-auto">
-          <div className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'
+          <button
+            onClick={onOpenShop}
+            className={`p-3 rounded-2xl border transition-all active:scale-95 ${isDarkMode ? 'bg-white/5 border-white/10 text-pink-400' : 'bg-white border-pink-200 text-pink-500 shadow-sm'}`}
+            title="Send Gift"
+          >
+            <GiftIcon size={20} />
+          </button>
+
+          <div className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl border transition-all ${isDarkMode
+            ? 'bg-white/5 border-white/20 focus-within:border-pink-500/50'
+            : 'bg-white border-pink-200 shadow-sm focus-within:border-pink-400 focus-within:ring-2 focus-within:ring-pink-100'
             }`}>
             <input
               value={inputText}

@@ -17,6 +17,7 @@ import GuestChat from './GuestChat';
 import AgeGate from './components/AgeGate';
 import ErrorBoundary from './components/ErrorBoundary';
 import PersonaCreationModal from './components/PersonaCreationModal';
+import ShopModal from './components/ShopModal';
 import { Sparkles, Heart, Phone, Lock, Trash2, MessageCircle, Shield } from 'lucide-react';
 import { ModeCardData, Persona } from './types';
 import { PERSONAS, MODE_CARDS } from './constants';
@@ -71,6 +72,22 @@ const AppContent: React.FC = () => {
   const [activeChatSession, setActiveChatSession] = useState<ChatSession | null>(null);
   const [viewingProfile, setViewingProfile] = useState<{ persona: Persona, avatarUrl?: string } | null>(null);
   const [selectedCreationMode, setSelectedCreationMode] = useState<ModeCardData | null>(null);
+  const [isShopOpen, setIsShopOpen] = useState(false);
+
+  // TRIGGER 2: JEALOUSY / ATTENTION (DAY 6)
+  useEffect(() => {
+    const profile = storage.getProfile();
+    const lastActive = new Date(profile.lastActive).getTime();
+    const now = Date.now();
+    const diffusedTime = now - lastActive;
+
+    // If away for more than 24 hours
+    if (diffusedTime > 24 * 60 * 60 * 1000 && !activeChatSession) {
+      setTimeout(() => {
+        alert("Ayesha sent you a message: 'Kal tum online nahi the... I missed you. Kahan gayab ho gaye the? 🥺'");
+      }, 3000);
+    }
+  }, []);
 
 
 
@@ -189,8 +206,13 @@ const AppContent: React.FC = () => {
       {/* Floating Wallet */}
       {!activeChatSession && (
         <div className="fixed top-5 right-5 z-[60]">
-          <WalletWidget isDarkMode={isDarkMode} />
+          <WalletWidget isDarkMode={isDarkMode} onOpenShop={() => setIsShopOpen(true)} />
         </div>
+      )}
+
+      {/* Shop Modal */}
+      {isShopOpen && (
+        <ShopModal isDarkMode={isDarkMode} onClose={() => setIsShopOpen(false)} />
       )}
 
       {/* Chat Screen Overlay */}
@@ -206,6 +228,7 @@ const AppContent: React.FC = () => {
           }}
           isDarkMode={isDarkMode}
           setIsDarkMode={setIsDarkMode}
+          onOpenShop={() => setIsShopOpen(true)}
         />
       )}
 
