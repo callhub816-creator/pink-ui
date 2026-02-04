@@ -2,65 +2,55 @@ export async function onRequestPost({ request, env }) {
     try {
         const { message, systemPrompt, history } = await request.json();
 
-        // 1. Get and CLEAN the API key
-        let apiKey = env.GEMINI_API_KEY;
-        if (!apiKey) {
-            return new Response(JSON.stringify({ error: "Environment Variable 'GEMINI_API_KEY' nahi mila." }), { status: 500 });
+        // 1. Get and Clean the key
+        let apiKey = env.GEMINI_API_KEY || "";
+        apiKey = apiKey.trim();
+
+        if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
+            return new Response(JSON.stringify({ error: "Cloudflare Settings mein 'GEMINI_API_KEY' set karke redeploy karein." }), { status: 500 });
         }
-        apiKey = apiKey.trim(); // Remove any hidden spaces
 
-        // 2. Using STABLE v1 and FLASH model (Most supported)
-        const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // 2. Try v1beta as it's the most compatible for generative models
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-        // 3. AGNOSTIC PAYLOAD (Works on every version)
-        // We put instructions inside the conversation itself
+        // 3. Super Simple Payload (No advanced fields)
         const payload = {
             contents: [
                 {
                     role: "user",
-                    parts: [{ text: `Instruction: Be a female AI companion. Style: Hinglish. Tone: Warm. My Persona: ${systemPrompt}\n\nUnderstood?` }]
-                },
-                {
-                    role: "model",
-                    parts: [{ text: "Haan, main samajh gayi. Let's chat! ❤️" }]
-                },
-                ...(history || []).map(m => ({
-                    role: m.role === "user" ? "user" : "model",
-                    parts: [{ text: String(m.text || "") }]
-                })),
-                {
-                    role: "user",
-                    parts: [{ text: String(message) }]
+                    parts: [{ text: `Persona: ${systemPrompt}\nUser: ${message}` }]
                 }
             ],
             generationConfig: {
-                maxOutputTokens: 500,
-                temperature: 0.9
+                maxOutputTokens: 300,
+                temperature: 0.8
             }
         };
 
         const response = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
 
         if (!response.ok) {
+            // Detailed Logging for you to see in the Console
             return new Response(JSON.stringify({
-                error: `Google Error: ${data.error?.message || "Check API Key"}`,
-                status: response.status
+                error: `Google API Error: ${data.error?.message || "Check Key"}`,
+                status: response.status,
+                endpoint: "v1beta"
             }), { status: response.status });
         }
 
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm a bit lost for words...";
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response...";
 
         return new Response(JSON.stringify({ text: reply }), {
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json" }
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: "System Crash: " + error.message }), { status: 500 });
+        return new Response(JSON.stringify({ error: "Function Crash: " + error.message }), { status: 500 });
     }
 }
