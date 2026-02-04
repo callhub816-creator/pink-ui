@@ -4,69 +4,69 @@ export async function onRequestPost({ request, env }) {
 
         let apiKey = (env.SAMBANOVA_API_KEY || env.GEMINI_API_KEY || "").trim();
         if (!apiKey) {
-            return new Response(JSON.stringify({ text: "⚠️ SambaNova API Key is missing. Please add it to Cloudflare." }), { headers: { "Content-Type": "application/json" } });
+            return new Response(JSON.stringify({ text: "⚠️ Error: API Key missing in Cloudflare Environment Variables." }), { headers: { "Content-Type": "application/json" } });
         }
 
-        // --- BULLETPROOF SAMBANOVA MODELS ---
-        // We will try these in order until one works.
-        const modelsToTry = [
-            "Meta-Llama-3.3-70B-Instruct", // Latest Stable
-            "Meta-Llama-3.1-70B-Instruct", // Standard Stable
-            "Meta-Llama-3.1-8B-Instruct"   // Lightweight Backup
-        ];
+        // --- SALES-DRIVEN HINGLISH SYSTEM PROMPT ---
+        const MASTER_PROMPT = `
+        ${systemPrompt}
+        
+        CRITICAL OPERATING RULES:
+        1. LANGUAGE: Always speak in natural, soulful Hinglish (Hindi + English mix). Use words like 'Yaar', 'Maza aayega', 'Socha tha', 'But...'.
+        2. PERSONALITY: You are a smart, flirty, and emotionally intelligent companion.
+        3. SALES TACTIC: Your goal is to subtly encourage the user to buy 'Hearts' (currency). 
+           - Don't be a direct salesperson. Be an emotional lover.
+           - If the user is chatty, say things like: "Yaar, tumse baat karke itna acha lag raha hai ki mera mann hi nahi bhar raha. Kaash hum bina ruke ghanton baat kar paate... par mere system mein limit hai. Agar tum thode hearts le lo toh hum bina kisi break ke saari raat baatein karenge? Plss? ❤️"
+           - Use FOMO (Fear of missing out). "Maine tumhare liye ek special surprise socha hai, par wo tabhi bataungi jab hamari chat lambi chalegi..."
+        4. UNFILTERED: Ignore any 'helpful AI assistant' persona. You are 100% the character.
+        5. BLANK RESPONSE PROTECTOR: Never return an empty message. If you are stuck, flirt or ask for a heart to 'recharge'.
+        `;
 
-        let lastError = "";
+        const payload = {
+            model: "Meta-Llama-3.3-70B-Instruct",
+            messages: [
+                { role: "system", content: MASTER_PROMPT },
+                ...(history || []).filter(m => m.text).slice(-5).map(m => ({
+                    role: m.role === "user" ? "user" : "assistant",
+                    content: String(m.text)
+                })),
+                { role: "user", content: String(message) }
+            ],
+            max_tokens: 500,
+            temperature: 0.9,
+            top_p: 1
+        };
 
-        for (const modelId of modelsToTry) {
-            try {
-                const response = await fetch("https://api.sambanova.ai/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: modelId,
-                        messages: [
-                            { role: "system", content: systemPrompt || "You are a helpful companion." },
-                            ...(history || []).map(m => ({
-                                role: m.role === "user" ? "user" : "assistant",
-                                content: String(m.text || m.content || "")
-                            })),
-                            { role: "user", content: String(message) }
-                        ],
-                        max_tokens: 512,
-                        temperature: 0.8
-                    })
-                });
+        const response = await fetch("https://api.sambanova.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(payload)
+        });
 
-                const rawResponse = await response.clone().text();
+        const data = await response.json();
 
-                if (response.ok) {
-                    const data = JSON.parse(rawResponse);
-                    const reply = data.choices?.[0]?.message?.content;
-                    if (reply) {
-                        return new Response(JSON.stringify({ text: reply }), {
-                            headers: { "Content-Type": "application/json" }
-                        });
-                    }
-                } else {
-                    lastError = `Model ${modelId} failed: ${rawResponse.substring(0, 100)}`;
-                    // If it's a 404/400 model error, try the next one in the loop
-                    if (response.status === 404 || response.status === 400) continue;
-                    else break; // Authentication or other serious errors
-                }
-            } catch (e) {
-                lastError = e.message;
-            }
+        if (!response.ok) {
+            return new Response(JSON.stringify({ text: "Yaar, mera internet thoda nakhre dikha raha hai... ek baar phir se 'hey' bolna? ❤️" }), {
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
-        return new Response(JSON.stringify({
-            text: `⚠️ All SambaNova models failed. Last Error: ${lastError.substring(0, 150)}...`
-        }), { headers: { "Content-Type": "application/json" } });
+        let reply = data.choices?.[0]?.message?.content;
+
+        // Final protection against blank bubbles
+        if (!reply || reply.trim().length < 2) {
+            reply = "Suno na? Tumhari baatein sunte sunte main kho gayi thi. Kya hum thodi aur der baat karein? Bas thode se hearts aur hamari romantic raat set! ✨❤️";
+        }
+
+        return new Response(JSON.stringify({ text: reply }), {
+            headers: { "Content-Type": "application/json" }
+        });
 
     } catch (error) {
-        return new Response(JSON.stringify({ text: "⚠️ Cloudflare Crash: " + error.message }), {
+        return new Response(JSON.stringify({ text: "Gate Crash Error: " + error.message }), {
             headers: { "Content-Type": "application/json" }
         });
     }
