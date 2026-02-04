@@ -1,3 +1,4 @@
+// TRIGGER DEPLOY: SYNCING UI TO DOMAIN (CALLHUB.IN) - FEB 4, 2026
 
 import React, { useState, useRef, useEffect } from 'react';
 
