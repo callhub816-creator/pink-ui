@@ -4,32 +4,48 @@ export async function onRequestPost({ request, env }) {
 
         const apiKey = env.GEMINI_API_KEY;
         if (!apiKey) {
-            return new Response(JSON.stringify({ error: "Cloudflare Settings mein GEMINI_API_KEY nahi mili. Please add it." }), {
+            return new Response(JSON.stringify({ error: "Cloudflare Settings mein GEMINI_API_KEY missing hai." }), {
                 status: 500,
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        // 1. Using v1beta for advanced features like system_instruction
-        // 2. Using gemini-1.5-flash (Standard Stable ID)
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // 1. Using v1 (STABLE PRODUCTION ENDPOINT)
+        // 2. Using gemini-1.5-flash which is standard
+        const modelId = "gemini-1.5-flash";
+        const API_URL = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`;
 
-        // 3. Ensuring history is in correct model/user format
+        // 3. AGNOSTIC PROMPT STRATEGY: 
+        // We inject the system instruction as the VERY FIRST user message 
+        // to avoid "Unknown name system_instruction" errors on different API versions.
+        const systemMessage = {
+            role: "user",
+            parts: [{ text: `SYSTEM INSTRUCTION: ${systemPrompt}\n\nUnderstood. I will now stay in character as your companion.` }]
+        };
+
+        const assistantAcknowledgement = {
+            role: "model",
+            parts: [{ text: "Theek hai, main samajh gayi. Let's talk! ❤️" }]
+        };
+
         const formattedHistory = (history || []).map(m => ({
             role: m.role === "user" ? "user" : "model",
             parts: [{ text: String(m.text || "") }]
         }));
 
+        // Combine: System Logic + Previous Chat + Current Message
+        const finalContents = [
+            systemMessage,
+            assistantAcknowledgement,
+            ...formattedHistory,
+            { role: "user", parts: [{ text: String(message) }] }
+        ];
+
         const payload = {
-            contents: [...formattedHistory, { role: "user", parts: [{ text: String(message) }] }],
-            system_instruction: {
-                parts: [{ text: String(systemPrompt) }]
-            },
+            contents: finalContents,
             generationConfig: {
                 maxOutputTokens: 500,
                 temperature: 0.9,
-                topP: 0.8,
-                topK: 40
             }
         };
 
@@ -52,14 +68,7 @@ export async function onRequestPost({ request, env }) {
         }
 
         const candidate = data.candidates?.[0];
-
-        if (candidate?.finishReason === "SAFETY") {
-            return new Response(JSON.stringify({ text: "Suno... hum thodi der baad baat karein? Kuch thoughts block ho rahe hain. ❤️" }), {
-                headers: { "Content-Type": "application/json" },
-            });
-        }
-
-        const responseText = candidate?.content?.parts?.[0]?.text || "I'm thinking... but words are not coming out.";
+        const responseText = candidate?.content?.parts?.[0]?.text || "I'm thinking... but can't find the words.";
 
         return new Response(JSON.stringify({
             text: responseText
