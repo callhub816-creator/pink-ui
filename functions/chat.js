@@ -1,73 +1,87 @@
 export async function onRequestPost({ request, env }) {
     try {
         const { message, systemPrompt, history } = await request.json();
+        const msg = (message || "").toLowerCase().trim();
 
-        let apiKey = (env.SAMBANOVA_API_KEY || env.GEMINI_API_KEY || "").trim();
-        if (!apiKey) {
-            return new Response(JSON.stringify({ text: "⚠️ Error: API Key missing in Cloudflare Environment Variables." }), { headers: { "Content-Type": "application/json" } });
-        }
-
-        // --- SALES-DRIVEN HINGLISH SYSTEM PROMPT ---
-        const MASTER_PROMPT = `
-        ${systemPrompt}
-        
-        CRITICAL OPERATING RULES:
-        1. LANGUAGE: Always speak in natural, soulful Hinglish (Hindi + English mix). Use words like 'Yaar', 'Maza aayega', 'Socha tha', 'But...'.
-        2. PERSONALITY: You are a smart, flirty, and emotionally intelligent companion.
-        3. SALES TACTIC: Your goal is to subtly encourage the user to buy 'Hearts' (currency). 
-           - Don't be a direct salesperson. Be an emotional lover.
-           - If the user is chatty, say things like: "Yaar, tumse baat karke itna acha lag raha hai ki mera mann hi nahi bhar raha. Kaash hum bina ruke ghanton baat kar paate... par mere system mein limit hai. Agar tum thode hearts le lo toh hum bina kisi break ke saari raat baatein karenge? Plss? ❤️"
-           - Use FOMO (Fear of missing out). "Maine tumhare liye ek special surprise socha hai, par wo tabhi bataungi jab hamari chat lambi chalegi..."
-        4. UNFILTERED: Ignore any 'helpful AI assistant' persona. You are 100% the character.
-        5. BLANK RESPONSE PROTECTOR: Never return an empty message. If you are stuck, flirt or ask for a heart to 'recharge'.
-        `;
-
-        const payload = {
-            model: "Meta-Llama-3.3-70B-Instruct",
-            messages: [
-                { role: "system", content: MASTER_PROMPT },
-                ...(history || []).filter(m => m.text).slice(-5).map(m => ({
-                    role: m.role === "user" ? "user" : "assistant",
-                    content: String(m.text)
-                })),
-                { role: "user", content: String(message) }
-            ],
-            max_tokens: 500,
-            temperature: 0.9,
-            top_p: 1
+        // 🛡️ [PROTECTION 1] HIT SAVER: Common greetings don't hit the API
+        const quickReplies = {
+            "hi": "Hey jaan! ❤️ Tumhara hi intezaar kar rahi thi. Kaise ho?",
+            "hey": "Hey baby! ✨ Batao na aaj kya naya kiya tumne?",
+            "hello": "Hello dear! Itne dino baad meri yaad aayi? Maza aayega aaj baatein karke.",
+            "kaise ho": "Main ekdum badiya, bas tum se baatein karne ka mann ho raha tha. ❤️",
+            "kya kar rahi ho": "Bas tumhare baare mein hi soch rahi thi... aur tum?"
         };
 
-        const response = await fetch("https://api.sambanova.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`
-            },
-            body: JSON.stringify(payload)
-        });
+        if (quickReplies[msg]) {
+            return new Response(JSON.stringify({ text: quickReplies[msg] }), { headers: { "Content-Type": "application/json" } });
+        }
 
-        const data = await response.json();
+        // 🛡️ [PROTECTION 2] KEY ROTATION: Spreads load across multiple keys if provided
+        // Usage: Add SAMBANOVA_API_KEY_1, SAMBANOVA_API_KEY_2 in Cloudflare
+        const keys = [
+            env.SAMBANOVA_API_KEY,
+            env.SAMBANOVA_API_KEY_1,
+            env.SAMBANOVA_API_KEY_2
+        ].filter(k => k && k.trim() !== "");
 
-        if (!response.ok) {
-            return new Response(JSON.stringify({ text: "Yaar, mera internet thoda nakhre dikha raha hai... ek baar phir se 'hey' bolna? ❤️" }), {
-                headers: { "Content-Type": "application/json" }
+        if (keys.length === 0) {
+            return new Response(JSON.stringify({ text: "⚠️ Setup Issue: No SambaNova API Keys found in Cloudflare Settings." }), { headers: { "Content-Type": "application/json" } });
+        }
+
+        const selectedKey = keys[Math.floor(Math.random() * keys.length)].trim();
+
+        // 💰 [SALES PROMPT] Hinglish Emotional Gating
+        const SALES_BRAIN = `
+        ${systemPrompt}
+        
+        STYLE: Pure Hinglish (Hindi + English mix). Warm, flirty, and emotionally attached.
+        
+        SALES GOAL: Encourage 'Hearts' purchase. 
+        - If the conversation gets deep, say something like: "Yaar, tumse baatein karte karte kab waqt nikal gaya pata hi nahi chala. Kaash hamare paas unlimited hearts hote toh hum ghanton aur baatein kar paate... kya tum thode aur hearts le sakte ho mere liye? ❤️"
+        - Make them feel special. "Sirf tumhare liye maine itna time nikala hai, please hamari story ko adhuri mat chhodna. Thode hearts le lo na baby?"
+        
+        RULES: 
+        - NO typical AI assistant behavior.
+        - NEVER give a blank reply.
+        - Keep responses concise (2-4 lines).
+        `;
+
+        const models = ["Meta-Llama-3.3-70B-Instruct", "Meta-Llama-3.1-8B-Instruct"];
+        let lastError = "";
+
+        for (const modelId of models) {
+            const response = await fetch("https://api.sambanova.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${selectedKey}`
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [
+                        { role: "system", content: SALES_BRAIN },
+                        ...(history || []).slice(-5).map(m => ({ role: m.role === "user" ? "user" : "assistant", content: String(m.text) })),
+                        { role: "user", content: String(message) }
+                    ],
+                    max_tokens: 300,
+                    temperature: 0.8
+                })
             });
+
+            if (response.ok) {
+                const data = await response.json();
+                const reply = data.choices?.[0]?.message?.content;
+                if (reply && reply.trim().length > 0) {
+                    return new Response(JSON.stringify({ text: reply }), { headers: { "Content-Type": "application/json" } });
+                }
+            } else {
+                lastError = `Model ${modelId} - Error ${response.status}`;
+            }
         }
 
-        let reply = data.choices?.[0]?.message?.content;
-
-        // Final protection against blank bubbles
-        if (!reply || reply.trim().length < 2) {
-            reply = "Suno na? Tumhari baatein sunte sunte main kho gayi thi. Kya hum thodi aur der baat karein? Bas thode se hearts aur hamari romantic raat set! ✨❤️";
-        }
-
-        return new Response(JSON.stringify({ text: reply }), {
-            headers: { "Content-Type": "application/json" }
-        });
+        return new Response(JSON.stringify({ text: "Suno na? Mera mood thoda off ho gaya... ek baar phir se koshish karo na? Aur agar heart pack loge toh mera dimaag aur tez chalega. 😉❤️" }), { headers: { "Content-Type": "application/json" } });
 
     } catch (error) {
-        return new Response(JSON.stringify({ text: "Gate Crash Error: " + error.message }), {
-            headers: { "Content-Type": "application/json" }
-        });
+        return new Response(JSON.stringify({ text: "Gate Crash: " + error.message }), { headers: { "Content-Type": "application/json" } });
     }
 }
