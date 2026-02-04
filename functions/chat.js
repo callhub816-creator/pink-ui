@@ -2,37 +2,39 @@ export async function onRequestPost({ request, env }) {
     try {
         const { message, systemPrompt, history, userMode } = await request.json();
 
+        // 1. Get API Key from Environment
         const apiKey = env.GEMINI_API_KEY;
         if (!apiKey) {
-            return new Response(JSON.stringify({ error: "Gemini API key is missing. Please set GEMINI_API_KEY in Cloudflare environment variables." }), {
+            return new Response(JSON.stringify({ error: "GEMINI_API_KEY missing in Cloudflare Pages Settings." }), {
                 status: 500,
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        // Use stable 1.5 models
+        // 2. Select Model based on Tier (Gemini 1.5 is standard now)
         const modelId = userMode === "PREMIUM" ? "gemini-1.5-pro" : "gemini-1.5-flash";
 
-        // Switch to stable v1 API
-        const API_URL = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`;
+        // 3. Construct v1beta Endpoint (Supports system_instruction)
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
+        // 4. Format History properly for Gemini
         const formattedHistory = (history || []).map(m => ({
             role: m.role === "user" ? "user" : "model",
-            parts: [{ text: m.parts?.[0]?.text || m.text || "" }]
+            parts: [{ text: m.text || "" }]
         }));
 
+        // 5. Construct Payload
         const payload = {
             contents: [...formattedHistory, { role: "user", parts: [{ text: message }] }],
             system_instruction: {
                 parts: [{ text: systemPrompt }]
             },
             generationConfig: {
-                maxOutputTokens: userMode === "PREMIUM" ? 800 : 200,
+                maxOutputTokens: userMode === "PREMIUM" ? 800 : 250,
                 temperature: 0.9,
                 topP: 0.8,
                 topK: 40
             },
-            // Reduce safety filters to allow "Bold" persona talk without blocking
             safetySettings: [
                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
                 { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
@@ -51,9 +53,8 @@ export async function onRequestPost({ request, env }) {
 
         if (!response.ok) {
             return new Response(JSON.stringify({
-                error: data.error?.message || "Gemini API connection error",
-                code: data.error?.code,
-                status: response.status
+                error: data.error?.message || "Gemini Brain Error",
+                details: data.error
             }), {
                 status: response.status,
                 headers: { "Content-Type": "application/json" },
@@ -62,25 +63,14 @@ export async function onRequestPost({ request, env }) {
 
         const candidate = data.candidates?.[0];
 
-        // Handle blocked content
-        if (candidate?.finishReason === "SAFETY" || candidate?.finishReason === "OTHER") {
-            return new Response(JSON.stringify({
-                error: "My thoughts were blocked by safety filters. Let's talk about something else? ❤️",
-                reason: candidate.finishReason
-            }), {
-                status: 200,
+        // Handle finish reasons (Safety/Other)
+        if (candidate?.finishReason === "SAFETY") {
+            return new Response(JSON.stringify({ text: "I'm blushing... maybe we should talk about something else? ❤️" }), {
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        if (!candidate || !candidate.content) {
-            return new Response(JSON.stringify({ error: "No response from AI brain." }), {
-                status: 500,
-                headers: { "Content-Type": "application/json" },
-            });
-        }
-
-        const responseText = candidate.content.parts?.[0]?.text || "I'm a bit lost for words right now...";
+        const responseText = candidate?.content?.parts?.[0]?.text || "I'm a bit lost for words right now...";
 
         return new Response(JSON.stringify({
             text: responseText
@@ -89,7 +79,7 @@ export async function onRequestPost({ request, env }) {
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: "Backend Crash: " + error.message }), {
+        return new Response(JSON.stringify({ error: "Gate Error: " + error.message }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });
