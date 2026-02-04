@@ -316,6 +316,7 @@ const AppContent: React.FC = () => {
             onStartCall={startVoiceCall}
             onStartChat={startChat}
             onViewProfile={handleViewProfile}
+            onOpenShop={() => setIsShopOpen(true)}
           />
         </div>
 

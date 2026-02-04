@@ -13,6 +13,7 @@ interface PersonaCardProps {
   onViewProfile: (persona: Persona, avatarUrl?: string) => void;
   isUserCreated?: boolean;
   daysLeft?: number; // For My Creations badge
+  onOpenShop?: () => void;
 }
 
 const PersonaCard: React.FC<PersonaCardProps> = ({
@@ -21,7 +22,8 @@ const PersonaCard: React.FC<PersonaCardProps> = ({
   onStartChat,
   onViewProfile,
   isUserCreated,
-  daysLeft
+  daysLeft,
+  onOpenShop
 }) => {
   const { isPersonaLocked } = useGating();
   const locked = isPersonaLocked(persona.id);
@@ -146,7 +148,11 @@ const PersonaCard: React.FC<PersonaCardProps> = ({
   const handleChat = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (locked) {
-      alert("This companion is looking for a deeper connection. Upgrade to 'Elite' to start your journey with them. ❤️");
+      if (onOpenShop) {
+        onOpenShop();
+      } else {
+        alert("This companion is looking for a deeper connection. Upgrade to 'Elite' to start your journey with them. ❤️");
+      }
       return;
     }
     onStartChat(persona, imageUrl || undefined);

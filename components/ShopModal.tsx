@@ -101,6 +101,42 @@ const ShopModal: React.FC<ShopModalProps> = ({ onClose, isDarkMode }) => {
                         </div>
                     </section>
 
+                    {/* ULTRA PLAN (CHARACTER UNLOCK) */}
+                    <section>
+                        <h3 className="text-xs font-bold uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
+                            <Sparkles size={12} className="text-purple-500" />
+                            Unlimited Access
+                        </h3>
+                        <div
+                            onClick={() => upgradeSubscription('plus')}
+                            className="relative p-5 rounded-2xl border-2 border-purple-500 bg-gradient-to-br from-purple-500/10 to-transparent cursor-pointer shadow-[0_10px_30px_-5px_rgba(168,85,247,0.2)] hover:shadow-[0_15px_40px_-5px_rgba(168,85,247,0.3)] transition-all active:scale-[0.98]"
+                        >
+                            <div className="absolute -top-3 right-6 px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-black rounded-full uppercase tracking-tighter shadow-md">
+                                Ultimate Pass
+                            </div>
+                            <div className="flex justify-between items-start mb-2 pt-1">
+                                <div>
+                                    <h4 className="font-bold text-xl text-purple-600 dark:text-purple-400">{plans.plus.name}</h4>
+                                    <p className="text-xs opacity-70">Unlock everything, forever.</p>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-xl font-black text-purple-600">₹{plans.plus.price}</span>
+                                    <p className="text-[9px] opacity-50 font-bold uppercase">One-time payment</p>
+                                </div>
+                            </div>
+                            <ul className="grid grid-cols-1 gap-2 mt-4">
+                                {plans.plus.features.map(f => (
+                                    <li key={f} className="text-[12px] font-bold flex items-center gap-2">
+                                        <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center">
+                                            <Check size={10} className="text-purple-500" />
+                                        </div>
+                                        {f}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </section>
+
                     {/* ADD-ONS (DAY 5) */}
                     <section>
                         <h3 className="text-xs font-bold uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">

@@ -6,6 +6,7 @@ import { useAuth } from '../src/contexts/AuthContext';
 import { useGating } from '../src/hooks/useGating';
 import { detectIntent } from '../utils/intentDetector';
 import WalletWidget from './WalletWidget';
+import GiftSelector from './GiftSelector';
 import { PERSONA_PROMPTS, FALLBACK_REPLIES } from '../src/config/personaConfig';
 import { NAME_AGNOSTIC_NOTE, LANGUAGE_CONTROL_SYSTEM_MESSAGE } from '../constants';
 
@@ -33,6 +34,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isGiftOpen, setIsGiftOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Load history but NO auto-greeting if empty
@@ -215,36 +217,58 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
         )}
       </div>
 
-      {/* Input */}
-      <footer className={`p-4 pb-8 ${isDarkMode ? 'bg-[#0B0E14]' : 'bg-white'} border-t ${isDarkMode ? 'border-white/10' : 'border-pink-50'}`}>
-        <div className="flex items-center gap-2 max-w-2xl mx-auto">
+      {/* Input Section */}
+      <footer className={`relative p-4 pb-8 border-t transition-colors ${isDarkMode ? 'bg-[#0B0E14] border-white/5' : 'bg-white border-gray-100'
+        }`}>
+
+        {isGiftOpen && (
+          <GiftSelector
+            isDarkMode={isDarkMode}
+            companionId={persona.id}
+            companionName={persona.name}
+            onClose={() => setIsGiftOpen(false)}
+          />
+        )}
+
+        <div className="flex items-center gap-3 max-w-2xl mx-auto">
+          {/* Action Button: Gift */}
           <button
-            onClick={onOpenShop}
-            className={`p-3 rounded-2xl border transition-all active:scale-95 ${isDarkMode ? 'bg-white/5 border-white/10 text-pink-400' : 'bg-white border-pink-200 text-pink-500 shadow-sm'}`}
-            title="Send Gift"
+            onClick={() => setIsGiftOpen(!isGiftOpen)}
+            className={`p-3 rounded-2xl transition-all duration-300 active:scale-90 ${isGiftOpen
+                ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/30'
+                : isDarkMode
+                  ? 'bg-white/5 text-pink-400 border border-white/10 hover:bg-white/10'
+                  : 'bg-white text-pink-500 border border-pink-100 shadow-sm hover:border-pink-300'
+              }`}
           >
-            <GiftIcon size={20} />
+            <GiftIcon size={22} strokeWidth={2.5} />
           </button>
 
-          <div className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl border transition-all ${isDarkMode
-            ? 'bg-white/5 border-white/20 focus-within:border-pink-500/50'
-            : 'bg-white border-pink-200 shadow-sm focus-within:border-pink-400 focus-within:ring-2 focus-within:ring-pink-100'
+          {/* Main Input Box (CLEAN DESIGN) */}
+          <div className={`flex-1 flex items-center px-5 py-3.5 rounded-[22px] border transition-all duration-300 ${isDarkMode
+              ? 'bg-white/5 border-white/10 focus-within:border-pink-500/50 focus-within:bg-white/10'
+              : 'bg-gray-50/50 border-gray-200 focus-within:bg-white focus-within:border-pink-400 focus-within:ring-4 focus-within:ring-pink-50 shadow-inner'
             }`}>
             <input
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={`Message ${persona.name}...`}
-              className="flex-1 bg-transparent outline-none text-sm placeholder:opacity-40"
+              placeholder={`Write something to ${persona.name}...`}
+              className="flex-1 bg-transparent outline-none text-[15px] font-medium placeholder:opacity-40"
               style={{ color: isDarkMode ? 'white' : '#4A2040' }}
             />
           </div>
+
+          {/* Action Button: Send */}
           <button
             onClick={() => handleSend()}
             disabled={!inputText.trim() || isTyping}
-            className="p-3.5 bg-pink-500 text-white rounded-2xl disabled:opacity-50 active:scale-95 transition-transform"
+            className={`p-3.5 rounded-2xl transition-all duration-300 active:scale-90 shadow-lg ${!inputText.trim() || isTyping
+                ? 'bg-gray-200 text-gray-400 shadow-none'
+                : 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-pink-500/20'
+              }`}
           >
-            <Send size={18} fill="white" />
+            <Send size={20} fill={!inputText.trim() || isTyping ? 'none' : 'white'} strokeWidth={2} />
           </button>
         </div>
       </footer>

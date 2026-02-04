@@ -86,6 +86,14 @@ export const GATING_CONFIG = {
       duration: '30d',
       features: ['Unlimited Text', 'Emotional Recall', 'Voice Access'],
       tier: 'CORE'
+    },
+    plus: {
+      id: 'plan_plus',
+      name: 'Ultra Soulmate Pass',
+      price: 499,
+      duration: 'Lifetime/Premium',
+      features: ['Unlock ALL Personas', 'Priority Model (Llama 3.3)', 'Unlimited Voice Calls'],
+      tier: 'PLUS'
     }
   },
   addons: [
@@ -105,9 +113,16 @@ export const GATING_CONFIG = {
 };
 
 export const GIFT_ITEMS: Gift[] = [
-  { id: 'gift_1', name: 'Red Rose', icon: '🌹', price: 10, points: 50, category: 'sweet' },
-  { id: 'gift_2', name: 'Chocolate Box', icon: '🍫', price: 25, points: 150, category: 'warm' },
-  { id: 'gift_3', name: 'Heart Pendant', icon: '💖', price: 100, points: 500, category: 'elite' },
+  { id: 'gift_rose', name: 'Red Rose', icon: '🌹', price: 10, points: 50, category: 'sweet' },
+  { id: 'gift_coffee', name: 'Coffee', icon: '☕', price: 20, points: 100, category: 'warm' },
+  { id: 'gift_letter', name: 'Love Letter', icon: '💌', price: 40, points: 200, category: 'sweet' },
+  { id: 'gift_chocolates', name: 'Chocolates', icon: '🍫', price: 60, points: 300, category: 'warm' },
+  { id: 'gift_cake', name: 'Heart Cake', icon: '🎂', price: 100, points: 500, category: 'sweet' },
+  { id: 'gift_teddy', name: 'Soft Teddy', icon: '🧸', price: 150, points: 750, category: 'warm' },
+  { id: 'gift_bouquet', name: 'Bouquet', icon: '💐', price: 200, points: 1000, category: 'sweet' },
+  { id: 'gift_puppy', name: 'Cute Puppy', icon: '🐶', price: 300, points: 1500, category: 'warm' },
+  { id: 'gift_earrings', name: 'Earrings', icon: '💎', price: 400, points: 2000, category: 'elite' },
+  { id: 'gift_ring', name: 'Promise Ring', icon: '💍', price: 500, points: 2500, category: 'elite' },
 ];
 
 export const HEARTS_PACKS = [

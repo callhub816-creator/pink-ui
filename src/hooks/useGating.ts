@@ -46,9 +46,10 @@ export const useGating = () => {
     };
 
     const isPersonaLocked = (personaId: string | number) => {
-        if (profile.subscription !== 'free') return false;
+        // Personas are unlocked for CORE and PLUS
+        if (profile.subscription === 'core' || profile.subscription === 'plus') return false;
 
-        // Personas with ID > 2 are CORE/Locked for free users
+        // Personas with ID > 2 are Locked for FREE and STARTER
         const id = typeof personaId === 'string' ? parseInt(personaId) : personaId;
         return id > 2;
     };
