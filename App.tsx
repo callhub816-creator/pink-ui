@@ -29,6 +29,8 @@ interface ChatSession {
 
 import { AuthProvider } from './src/contexts/AuthContext';
 
+import WalletWidget from './components/WalletWidget';
+
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
@@ -183,6 +185,13 @@ const AppContent: React.FC = () => {
     <div className={`min-h-screen w-full ${isDarkMode ? 'bg-[#0B0E14]' : 'bg-[#FDF2F8]'} relative overflow-x-hidden font-sans transition-colors duration-500`}>
 
       <AgeGate />
+
+      {/* Floating Wallet */}
+      {!activeChatSession && (
+        <div className="fixed top-5 right-5 z-[60]">
+          <WalletWidget isDarkMode={isDarkMode} />
+        </div>
+      )}
 
       {/* Chat Screen Overlay */}
       {activeChatSession && (

@@ -64,34 +64,56 @@ export const CONVERSION_POOL = [
 export const NAME_AGNOSTIC_NOTE = "Assistant name is dynamic. Do not assume any default name.";
 
 export const GATING_CONFIG = {
+  plans: {
+    free: {
+      name: 'Basic Access',
+      dailyLimit: 15,
+      features: ['Text Only', 'Standard Speed'],
+      tier: 'FREE'
+    },
+    starter: {
+      id: 'plan_starter',
+      name: 'Starter Pass',
+      price: 49,
+      duration: '24h',
+      features: ['Unlimited Text', 'Faster Replies'],
+      tier: 'STARTER'
+    },
+    core: {
+      id: 'plan_core',
+      name: 'Core Connection',
+      price: 199,
+      duration: '30d',
+      features: ['Unlimited Text', 'Emotional Recall', 'Voice Access'],
+      tier: 'CORE'
+    }
+  },
+  addons: [
+    { id: 'addon_voice', name: 'Voice Note Interaction', price: 29 },
+    { id: 'addon_midnight', name: 'Late Night Talk (30m)', price: 49 },
+    { id: 'addon_mood', name: 'Mood Repair Session', price: 99 }
+  ],
+  prices: {
+    voiceCallMinute: 5,
+    textMessage: 1
+  },
   connectionThresholds: {
-    acquaintance: 0,
     friend: 100,
     close: 500,
     trusted: 1000
-  },
-  prices: {
-    testTrial: 10,
-    basic: 199,
-    plus: 499,
-    midnightPass: 99,
-    memoryUnlock: 59,
-    memorySave: 29
   }
 };
 
 export const GIFT_ITEMS: Gift[] = [
-  { id: 'gift_1', name: 'Red Rose', icon: '🌹', price: 20, points: 50, category: 'sweet' },
-  { id: 'gift_2', name: 'Chocolate Box', icon: '🍫', price: 50, points: 150, category: 'warm' },
-  { id: 'gift_3', name: 'Heart Pendant', icon: '💖', price: 150, points: 500, category: 'elite' },
-  { id: 'gift_4', name: 'Teddy Bear', icon: '🧸', price: 80, points: 250, category: 'warm' },
+  { id: 'gift_1', name: 'Red Rose', icon: '🌹', price: 10, points: 50, category: 'sweet' },
+  { id: 'gift_2', name: 'Chocolate Box', icon: '🍫', price: 25, points: 150, category: 'warm' },
+  { id: 'gift_3', name: 'Heart Pendant', icon: '💖', price: 100, points: 500, category: 'elite' },
 ];
 
 export const HEARTS_PACKS = [
-  { id: 'hearts_test', name: 'Test Spark', hearts: 10, price: 10 },
-  { id: 'hearts_100', name: 'Small Spark', hearts: 100, price: 99 },
-  { id: 'hearts_300', name: 'Growing Flame', hearts: 300, price: 249 },
-  { id: 'hearts_650', name: 'Inner Glow', hearts: 650, price: 499, bonus: '30%' },
+  { id: 'hearts_starter', name: 'Starter Spark', hearts: 50, price: 49 },
+  { id: 'hearts_core', name: 'Bonding Pack', hearts: 250, price: 199 },
+  { id: 'hearts_pro', name: 'Soulmate Pack', hearts: 600, price: 399 },
 ];
 
 export const PERSONAS: Persona[] = [

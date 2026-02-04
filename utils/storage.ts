@@ -240,8 +240,8 @@ export const storage = {
 
     if (lastActiveDate !== today) {
       profile.messageCountToday = 1;
-      // Phase 3: Daily login hearts bonus
-      profile.hearts = (profile.hearts || 0) + 10;
+      // DAILY LOGIN BONUS: 5 Hearts as per strategy
+      profile.hearts = (profile.hearts || 0) + 5;
     } else {
       profile.messageCountToday += 1;
     }

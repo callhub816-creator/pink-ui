@@ -26,7 +26,7 @@ type AuthContextType = {
   unlockConnectionTier: (companionId: string | number, tier: ConnectionLevel) => boolean;
   leasePersonality: (mode: string) => boolean;
   extendMessages: () => boolean;
-  buyMidnightPass: () => Promise<void>;
+  buyStarterPass: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,7 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let cap = thresholds.friend;
 
     if (currentProfile.subscription === 'plus') cap = Infinity;
-    else if (currentProfile.subscription === 'basic') cap = thresholds.close;
+    else if (currentProfile.subscription === 'core') cap = thresholds.trusted;
+    else if (currentProfile.subscription === 'starter') cap = thresholds.close;
 
     if (newPoints > cap && currentPoints <= cap) {
       console.log("Connection cap reached for plan:", currentProfile.subscription);
@@ -234,13 +235,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const upgradeSubscription = useCallback(async (plan: SubscriptionPlan) => {
     if (plan === 'free') return;
-    const price = GATING_CONFIG.prices[plan as keyof typeof GATING_CONFIG.prices] || 499;
+
+    // Get plan details from config
+    const planDetails = GATING_CONFIG.plans[plan as keyof typeof GATING_CONFIG.plans];
+    const price = (planDetails as any)?.price || 499;
 
     await initiatePayment({
       amount: price,
       currency: "INR",
       name: user?.email?.split('@')[0] || "Guest User",
-      description: `Upgrade to ${plan.toUpperCase()} Plan`,
+      description: `${planDetails?.name} (AI Companion Interaction)`,
       userEmail: user?.email || "support@callhub.in",
       onSuccess: async (response: any) => {
         try {
@@ -259,10 +263,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             profile.subscription = plan;
             storage.saveProfile(profile);
             refreshProfile();
-            alert(`Welcome to ${plan.toUpperCase()}! Your premium features are now active.`);
+            alert(`Welcome to ${planDetails?.name}! Enjoy your premium experience. ✨`);
           } else {
             const errData = await verifyRes.json().catch(() => ({}));
-            alert(`Subscription verification failed: ${errData.error || 'Unknown Error'}. Please contact support.`);
+            alert(`Payment verification failed: ${errData.error || 'Unknown Error'}. Please contact support.`);
           }
         } catch (err) {
           console.error("Verification error", err);
@@ -270,19 +274,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       onFailure: (err) => {
         console.error("Upgrade failed", err);
-        alert("Subscription upgrade failed. Please try again.");
+        alert("Payment was not successful. Please try again.");
       }
     });
   }, [refreshProfile, user]);
 
-  const buyMidnightPass = useCallback(async () => {
-    const price = GATING_CONFIG.prices.midnightPass || 99;
+  const buyStarterPass = useCallback(async () => {
+    const price = GATING_CONFIG.plans.starter.price;
 
     await initiatePayment({
       amount: price,
       currency: "INR",
       name: user?.email?.split('@')[0] || "Guest User",
-      description: "Midnight Pass (One Night Access)",
+      description: "Starter Pass (24h AI Interaction)",
       userEmail: user?.email || "support@callhub.in",
       onSuccess: async (response: any) => {
         try {
@@ -291,18 +295,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               ...response,
-              type: 'midnight_pass'
+              type: 'subscription',
+              plan: 'starter'
             })
           });
 
           if (verifyRes.ok) {
             const profile = storage.getProfile();
-            const expiry = new Date();
-            expiry.setHours(23, 59, 59, 999);
-            profile.midnightPassExpiry = expiry.toISOString();
+            profile.subscription = 'starter';
             storage.saveProfile(profile);
             refreshProfile();
-            alert("Midnight Pass Activated! Fast replies and unlimited chat enabled for tonight.");
+            alert("Starter Pass Activated! Unlimited chat enabled for the next 24 hours.");
           } else {
             const errData = await verifyRes.json().catch(() => ({}));
             alert(`Verification failed: ${errData.error || 'Unknown Error'}. Please try again.`);
@@ -313,7 +316,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       onFailure: (err) => {
         console.error("Pass purchase failed", err);
-        alert("Midnight Pass purchase failed. Please try again.");
+        alert("Starter Pass purchase failed. Please try again.");
       }
     });
   }, [refreshProfile, user]);
@@ -322,7 +325,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       user, profile, loading, signUp, signIn, signInWithProvider, signOut,
       updateConnection, incrementUsage, refreshProfile, upgradeSubscription,
-      purchaseHearts, spendHearts, sendGift, unlockConnectionTier, leasePersonality, extendMessages, buyMidnightPass
+      purchaseHearts, spendHearts, sendGift, unlockConnectionTier, leasePersonality, extendMessages, buyStarterPass
     }}>
       {children}
     </AuthContext.Provider>

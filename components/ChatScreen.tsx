@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Persona } from '../types';
 import { ArrowLeft, Phone, Mic, Send, Heart, X, Sparkles, RefreshCw, Lock as LockIcon, Gift as GiftIcon } from 'lucide-react';
 import { storage } from '../utils/storage';
+import { useAuth } from '../src/contexts/AuthContext';
+import { useGating } from '../src/hooks/useGating';
 import { detectIntent } from '../utils/intentDetector';
+import WalletWidget from './WalletWidget';
 import { PERSONA_PROMPTS, FALLBACK_REPLIES } from '../src/config/personaConfig';
 import { NAME_AGNOSTIC_NOTE, LANGUAGE_CONTROL_SYSTEM_MESSAGE } from '../constants';
 
@@ -24,35 +27,41 @@ interface Message {
 }
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, isDarkMode }) => {
+  const { profile, incrementUsage, buyStarterPass } = useAuth();
+  const { isMessageLimitReached, isNightTimeLocked } = useGating();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const lastInteractionRef = useRef<number>(Date.now());
-
-  useEffect(() => {
-    const saved = storage.getMessages(persona.id);
-    if (saved.length > 0) {
-      setMessages(saved.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })));
-    } else {
-      const greeting: Message = {
-        id: 'initial',
-        sender: 'model',
-        text: "I've been thinking about you...",
-        timestamp: new Date()
-      };
-      setMessages([greeting]);
-      storage.saveMessage(persona.id, { ...greeting, timestamp: greeting.timestamp.toISOString() });
-    }
-  }, [persona.id]);
-
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, isTyping]);
 
   const handleSend = async (resendText?: string) => {
     const text = resendText || inputText;
     if (!text.trim() || isTyping) return;
+
+    // CHECK GATING
+    if (isMessageLimitReached()) {
+      const limitMsg: Message = {
+        id: 'limit-hit-' + Date.now(),
+        sender: 'model',
+        text: `She wants to continue... but your daily free messages are up 💔. Unlock unlimited chat for 24h for just ₹49!`,
+        timestamp: new Date(),
+        isError: true
+      };
+      setMessages(prev => [...prev, limitMsg]);
+      return;
+    }
+
+    if (isNightTimeLocked()) {
+      const nightMsg: Message = {
+        id: 'night-hit-' + Date.now(),
+        sender: 'model',
+        text: `It's late, and she's resting... 🌙 Only premium companions can talk late at night. Unlock the Starter Pass to wake her up!`,
+        timestamp: new Date(),
+        isError: true
+      };
+      setMessages(prev => [...prev, nightMsg]);
+      return;
+    }
 
     const newUserMsg: Message = {
       id: Date.now().toString(),
@@ -60,6 +69,23 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
       text,
       timestamp: new Date()
     };
+
+    // SPEND HEART LOGIC (India Market Strategy)
+    // Spend 1 heart if free, unless they have unlimted via Starter/Core (handled in Auth)
+    if (profile.subscription === 'free') {
+      const hasBalance = storage.spendHearts(1);
+      if (!hasBalance) {
+        const noHeartMsg: Message = {
+          id: 'no-hearts-' + Date.now(),
+          sender: 'model',
+          text: `Suno na? She's waiting for your message... par tumhare hearts khatam ho gaye hain. 💔 refill kar lo phir baatein karte hain? ✨`,
+          timestamp: new Date(),
+          isError: true
+        };
+        setMessages(prev => [...prev, noHeartMsg]);
+        return;
+      }
+    }
 
     if (!resendText) {
       setMessages(prev => [...prev, newUserMsg]);
@@ -138,7 +164,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
             </div>
           </div>
         </div>
-        <button onClick={onStartCall} className="p-2.5 rounded-full bg-pink-500 text-white shadow-lg"><Phone size={20} /></button>
+        <div className="flex items-center gap-3">
+          <WalletWidget isDarkMode={isDarkMode} />
+          <button onClick={onStartCall} className="p-2.5 rounded-full bg-pink-500 text-white shadow-lg"><Phone size={20} /></button>
+        </div>
       </header>
 
       {/* Messages */}
@@ -146,10 +175,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
         {messages.map((msg) => (
           <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
             <div className={`max-w-[80%] px-4 py-3 rounded-2xl shadow-sm ${msg.sender === 'user'
-                ? 'bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-br-none'
-                : msg.isError
-                  ? 'bg-red-50 border border-red-200 text-red-600 text-xs'
-                  : isDarkMode ? 'bg-white/10 text-white rounded-bl-none' : 'bg-white text-[#4A2040] rounded-bl-none border border-pink-50'
+              ? 'bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-br-none'
+              : msg.isError
+                ? 'bg-red-50 border border-red-200 text-red-600 text-xs'
+                : isDarkMode ? 'bg-white/10 text-white rounded-bl-none' : 'bg-white text-[#4A2040] rounded-bl-none border border-pink-50'
               }`}>
               {msg.text}
             </div>

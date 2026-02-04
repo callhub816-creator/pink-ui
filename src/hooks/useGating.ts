@@ -7,7 +7,11 @@ export const useGating = () => {
 
     const getConnectionTier = (companionId: string | number): ConnectionLevel => {
         const points = profile.connectionPoints[companionId] || 0;
-        const thresholds = GATING_CONFIG.connectionThresholds;
+        const thresholds = {
+            friend: 100,
+            close: 500,
+            trusted: 1000
+        };
 
         if (points >= thresholds.trusted) return 'trusted';
         if (points >= thresholds.close) return 'close';
@@ -16,50 +20,35 @@ export const useGating = () => {
     };
 
     const isMessageLimitReached = () => {
-        if (profile.subscription !== 'free') return false;
+        // STARTER and CORE plans give unlimited chat
+        if (profile.subscription === 'starter' || profile.subscription === 'core' || profile.subscription === 'plus') return false;
 
-        // Midnight Pass also grants unlimited messages for the night
-        if (profile.midnightPassExpiry) {
-            const expiry = new Date(profile.midnightPassExpiry).getTime();
-            if (Date.now() < expiry) return false;
-        }
-
-        return (profile.messageCountToday || 0) >= 15;
+        const limit = GATING_CONFIG.plans.free.dailyLimit;
+        return (profile.messageCountToday || 0) >= limit;
     };
 
     const isNightTimeLocked = () => {
         const hour = new Date().getHours();
-        // 10 PM (22) to 4 AM (4)
-        const isNight = hour >= 22 || hour < 4;
+        // 11 PM (23) to 4 AM (4)
+        const isNight = hour >= 23 || hour < 4;
 
         if (!isNight) return false;
-        if (profile.subscription !== 'free') return false;
 
-        // Check for Midnight Pass
-        if (profile.midnightPassExpiry) {
-            const expiry = new Date(profile.midnightPassExpiry).getTime();
-            if (Date.now() < expiry) return false;
-        }
+        // Paid plans are never locked
+        if (profile.subscription !== 'free') return false;
 
         return true;
     };
 
     const getResponseDelay = () => {
-        if (profile.subscription !== 'free') return 1000; // Fast for paid
-
-        // Check Midnight Pass for fast replies
-        if (profile.midnightPassExpiry) {
-            const expiry = new Date(profile.midnightPassExpiry).getTime();
-            if (Date.now() < expiry) return 1000; // Pass valid, fast replies
-        }
-
-        return 4000; // Slower for free
+        if (profile.subscription !== 'free') return 800; // Snappy for paid
+        return 3500; // Natural delay for free
     };
 
     const isPersonaLocked = (personaId: string | number) => {
         if (profile.subscription !== 'free') return false;
 
-        // Personas with ID > 2 are premium/locked for free users
+        // Personas with ID > 2 are CORE/Locked for free users
         const id = typeof personaId === 'string' ? parseInt(personaId) : personaId;
         return id > 2;
     };
@@ -67,16 +56,13 @@ export const useGating = () => {
     const canAccessMode = (modeTitle: string) => {
         if (profile.subscription !== 'free') return true;
 
-        // Check if the user has unlocked this specific mode via Hearts/Digital Credits
-        if (profile.unlockedModes && profile.unlockedModes.includes(modeTitle)) return true;
-
         // Only 'Interactive Chat' is free by default
         return modeTitle === 'Interactive Chat';
     };
 
     const canCall = () => {
-        if (profile.subscription !== 'free') return true;
-        return false; // Free gets preview only (handled in UI)
+        // Only CORE and PLUS can call
+        return profile.subscription === 'core' || profile.subscription === 'plus';
     };
 
     return {

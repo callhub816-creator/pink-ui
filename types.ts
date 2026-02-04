@@ -28,7 +28,7 @@ export interface Persona {
 
 // --- MONETIZATION & RELATIONSHIP TYPES ---
 
-export type SubscriptionPlan = 'free' | 'basic' | 'plus' | 'elite' | 'testTrial';
+export type SubscriptionPlan = 'free' | 'starter' | 'core' | 'plus';
 
 export type ConnectionLevel = 'stranger' | 'friend' | 'close' | 'trusted';
 
