@@ -3,7 +3,6 @@ export async function onRequestPost({ request, env }) {
         const { message, systemPrompt, history } = await request.json();
 
         // 1. Check for SambaNova API Key
-        // Priority: SAMBANOVA_API_KEY if exists, otherwise fallback to GEMINI_API_KEY (if user reused the same name)
         const apiKey = (env.SAMBANOVA_API_KEY || env.GEMINI_API_KEY || "").trim();
 
         if (!apiKey) {
@@ -12,9 +11,10 @@ export async function onRequestPost({ request, env }) {
 
         // 2. Setup SambaNova Config
         const API_URL = "https://api.sambanova.ai/v1/chat/completions";
-        const MODEL_ID = "Meta-Llama-3.1-70B-Instruct-Turbo"; // High performance model
+        // Fixed Model Name: Removed "-Turbo" as it's not standard for direct API
+        const MODEL_ID = "Meta-Llama-3.1-70B-Instruct";
 
-        // 3. Format Messages for OpenAI compatibility
+        // 3. Format Messages
         const messages = [
             { role: "system", content: systemPrompt },
             ...(history || []).map(m => ({
@@ -28,7 +28,7 @@ export async function onRequestPost({ request, env }) {
             model: MODEL_ID,
             messages: messages,
             max_tokens: 800,
-            temperature: 0.8,
+            temperature: 0.7,
             top_p: 0.9
         };
 
@@ -46,12 +46,15 @@ export async function onRequestPost({ request, env }) {
 
         if (!response.ok) {
             return new Response(JSON.stringify({
-                error: `SambaNova Error: ${data.error?.message || "API Failure"}`,
+                error: `SambaNova Backend Error: ${data.error?.message || "Invalid Model or Key"}`,
+                code: data.error?.code,
                 status: response.status
-            }), { status: response.status });
+            }), {
+                status: 200, // Return 200 so UI can display the specific error message instead of a generic 404
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
-        // 5. Extract Reply
         const replyText = data.choices?.[0]?.message?.content || "I'm speachless right now...";
 
         return new Response(JSON.stringify({ text: replyText }), {
@@ -59,6 +62,9 @@ export async function onRequestPost({ request, env }) {
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: "Backend Crash: " + error.message }), { status: 500 });
+        return new Response(JSON.stringify({ error: "Cloudflare Gate Error: " + error.message }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+        });
     }
 }
