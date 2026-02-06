@@ -31,8 +31,9 @@ interface ChatSession {
 
 import { NotificationProvider, useNotification } from './components/NotificationProvider';
 import IntroduceYourself from './components/IntroduceYourself';
-import { AuthProvider } from './src/contexts/AuthContext';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import WalletWidget from './components/WalletWidget';
+import AuthScreen from './src/components/AuthScreen';
 
 const App: React.FC = () => {
   return (
@@ -50,11 +51,14 @@ const AppContent: React.FC = () => {
   const { showNotification } = useNotification();
   const [currentPage, setCurrentPage] = useState<'home' | 'about' | 'privacy' | 'terms' | 'faq' | 'safety' | 'refund' | 'admin' | 'guest-chat'>('home');
   const [isDarkMode, setIsDarkMode] = useState(false); // Default to Pink Theme (Light Mode)
+  const { user, loading } = useAuth();
   const galleryRef = useRef<HTMLDivElement>(null);
   const vibeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    storage.incrementSessionsCount();
+    if (!loading) {
+      storage.incrementSessionsCount();
+    }
 
     // Welcome back notification
     const rawUserInfo = localStorage.getItem('callhub_user_info');
@@ -189,6 +193,18 @@ const AppContent: React.FC = () => {
       />
     );
   }
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-[#FDF2F8]">
+        <div className="w-12 h-12 border-4 border-[#FF9ACB] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user && currentPage === 'home') {
+    return <AuthScreen />;
+  }
+
   if (currentPage === 'guest-chat') {
     return <GuestChat onBack={() => setCurrentPage('home')} />;
   }
