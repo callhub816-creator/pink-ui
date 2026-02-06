@@ -1,0 +1,44 @@
+
+export async function onRequestGet({ request, env }) {
+    const cookieHeader = request.headers.get("Cookie") || "";
+    const cookies = Object.fromEntries(cookieHeader.split("; ").map(c => c.split("=")));
+    const token = cookies["auth_token"];
+
+    if (!token) {
+        return new Response(JSON.stringify({ error: "Not logged in" }), { status: 401 });
+    }
+
+    try {
+        const [payloadB64, signatureB64] = token.split(".");
+        const payloadStr = atob(payloadB64);
+        const payload = JSON.parse(payloadStr);
+
+        // Check expiration
+        if (payload.exp < Date.now()) {
+            return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+        }
+
+        // Verify Signature
+        const encoder = new TextEncoder();
+        const secret = env.JWT_SECRET || "default_hush_hush_secret";
+        const key = await crypto.subtle.importKey(
+            "raw",
+            encoder.encode(secret),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["verify"]
+        );
+
+        const signature = new Uint8Array(atob(signatureB64).split("").map(c => c.charCodeAt(0)));
+        const isValid = await crypto.subtle.verify("HMAC", key, signature, encoder.encode(payloadStr));
+
+        if (!isValid) {
+            return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401 });
+        }
+
+        return new Response(JSON.stringify(payload), { headers: { "Content-Type": "application/json" } });
+
+    } catch (err) {
+        return new Response(JSON.stringify({ error: "Auth failed" }), { status: 401 });
+    }
+}

@@ -39,7 +39,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile>(storage.getProfile());
   const [loading, setLoading] = useState(true);
   const { showNotification } = useNotification();
@@ -47,6 +47,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshProfile = useCallback(() => {
     setProfile(storage.getProfile());
   }, []);
+
+  // Fetch user session on load
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const userData = await res.json();
+          setUser(userData);
+        }
+      } catch (err) {
+        console.debug('Auth check failed - likely guest mode');
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const signUp = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Signup failed');
+      setUser(data.user);
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+      setUser(data.user);
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signInWithProvider = async (provider: ProviderName) => {
+    // Redirect to Cloudflare Auth endpoint for Google
+    window.location.href = `/api/auth/${provider}`;
+  };
 
   const updateConnection = useCallback((companionId: string | number, points: number) => {
     const currentProfile = storage.getProfile();
@@ -114,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         showNotification("Payment was not successful. Please try again.", 'error');
       }
     });
-  }, [refreshProfile, user]);
+  }, [refreshProfile, user, showNotification]);
 
   const spendHearts = useCallback((amount: number) => {
     const success = storage.spendHearts(amount);
@@ -171,68 +232,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   }, [refreshProfile]);
 
-  useEffect(() => {
-    let mounted = true;
-    const getInitial = async () => {
-      try {
-        const { data: { session } } = await supabase?.auth.getSession() || { data: { session: null } };
-        if (!mounted) return;
-        setUser(session?.user ?? null);
-      } catch (err) {
-        console.error('Auth: getSession error', err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    getInitial();
-
-    const { data: listener } = supabase?.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    }) || { data: { subscription: { unsubscribe: () => { } } } };
-
-    return () => {
-      mounted = false;
-      listener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  const signUp = async (email: string, password: string) => {
-    if (!supabase) return { data: null, error: new Error('Supabase not initialized') };
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (data?.session?.user) setUser(data.session.user);
-      return { data, error };
-    } catch (error) { return { data: null, error } as any; } finally { setLoading(false); }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    if (!supabase) return { data: null, error: new Error('Supabase not initialized') };
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (data?.session?.user) setUser(data.session.user);
-      return { data, error };
-    } catch (error) { return { data: null, error } as any; } finally { setLoading(false); }
-  };
-
-  const signInWithProvider = async (provider: ProviderName) => {
-    if (!supabase) return;
-    setLoading(true);
-    try { await supabase.auth.signInWithOAuth({ provider }); }
-    catch (error) { console.error('OAuth sign-in error', error); throw error; }
-    finally { setLoading(false); }
-  };
-
   const signOut = async () => {
-    if (!supabase) {
-      setUser(null);
-      return;
-    }
     setLoading(true);
-    try { await supabase.auth.signOut(); setUser(null); }
-    catch (error) { console.error('Sign out error', error); }
-    finally { setLoading(false); }
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+      showNotification('Logged out successfully.', 'info');
+    } catch (error) {
+      console.error('Sign out error', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const upgradeSubscription = useCallback(async (plan: SubscriptionPlan) => {
