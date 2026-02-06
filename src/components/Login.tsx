@@ -5,7 +5,7 @@ import { Mail, Lock, ArrowLeft, Heart, Sparkles } from 'lucide-react';
 
 const Login: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +15,7 @@ const Login: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await signIn(email, password);
+      const { data, error } = await signIn(username, password);
       if (error) {
         setError(error.message || String(error));
         return;
@@ -52,17 +52,17 @@ const Login: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#5e3a58]/60 uppercase tracking-widest ml-1">Email Address</label>
+            <label className="text-xs font-bold text-[#5e3a58]/60 uppercase tracking-widest ml-1">Username</label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB] group-focus-within:text-[#B28DFF] transition-colors">
                 <Mail size={18} />
               </div>
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                placeholder="me@example.com"
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                placeholder="your_handle"
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-white/50 border border-white/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40"
               />
             </div>

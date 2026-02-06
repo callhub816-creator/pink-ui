@@ -10,11 +10,12 @@ import { useNotification } from '../../components/NotificationProvider';
 type ProviderName = 'facebook' | 'google';
 
 type AuthContextType = {
-  user: User | null;
+  user: any;
   profile: UserProfile;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: any; data: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any; data: any }>;
+  syncProfile: (profile: UserProfile) => Promise<void>;
+  signUp: (username: string, displayName: string, password: string) => Promise<{ error: any; data: any }>;
+  signIn: (username: string, password: string) => Promise<{ error: any; data: any }>;
   signInWithProvider: (provider: ProviderName) => Promise<void>;
   signOut: () => Promise<void>;
   updateConnection: (companionId: string | number, points: number) => void;
@@ -48,6 +49,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(storage.getProfile());
   }, []);
 
+  // Sync profile to DB
+  const syncProfile = useCallback(async (updatedProfile: UserProfile) => {
+    try {
+      await fetch('/api/auth/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileData: updatedProfile })
+      });
+    } catch (err) {
+      console.warn('Sync failed - likely guest mode');
+    }
+  }, []);
+
   // Fetch user session on load
   useEffect(() => {
     const checkAuth = async () => {
@@ -56,6 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);
+          // Optional: Fetch latest profile from DB if user is logged in
+          const loginRes = await fetch('/api/auth/login_check', { method: 'POST' }); // Dummy or reuse /me if it returns profile
         }
       } catch (err) {
         console.debug('Auth check failed - likely guest mode');
@@ -66,13 +82,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (username: string, displayName: string, password: string) => {
     setLoading(true);
     try {
+      const currentProfile = storage.getProfile();
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ username, displayName, password, profileData: currentProfile })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Signup failed');
@@ -85,17 +102,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (username: string, password: string) => {
     setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ username, password })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
+
       setUser(data.user);
+      if (data.profileData) {
+        storage.saveProfile(data.profileData);
+        refreshProfile();
+      }
       return { data, error: null };
     } catch (error: any) {
       return { data: null, error };
@@ -126,14 +148,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     storage.addConnectionPoints(companionId, points);
-    refreshProfile();
-  }, [refreshProfile]);
+    const newProfile = storage.getProfile();
+    setProfile(newProfile);
+    syncProfile(newProfile);
+  }, [syncProfile]);
 
   const incrementUsage = useCallback(() => {
     const count = storage.incrementMessageCount();
-    refreshProfile();
+    const newProfile = storage.getProfile();
+    setProfile(newProfile);
+    syncProfile(newProfile);
     return count;
-  }, [refreshProfile]);
+  }, [syncProfile]);
 
   const purchaseHearts = useCallback(async (amount: number) => {
     const pack = HEARTS_PACKS.find(p => p.hearts === amount);
@@ -159,7 +185,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (verifyRes.ok) {
             storage.addHearts(amount);
-            refreshProfile();
+            const newProfile = storage.getProfile();
+            setProfile(newProfile);
+            syncProfile(newProfile);
             showNotification(`Successful! Added ${amount} Hearts. ❤️`, 'hearts');
           } else {
             const errData = await verifyRes.json().catch(() => ({}));
@@ -179,9 +207,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const spendHearts = useCallback((amount: number) => {
     const success = storage.spendHearts(amount);
-    if (success) refreshProfile();
+    if (success) {
+      const newProfile = storage.getProfile();
+      setProfile(newProfile);
+      syncProfile(newProfile);
+    }
     return success;
-  }, [refreshProfile]);
+  }, [syncProfile]);
 
   const sendGift = useCallback((companionId: string | number, giftId: string) => {
     const gift = GIFT_ITEMS.find(g => g.id === giftId);
@@ -190,11 +222,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const success = storage.spendHearts(gift.price);
     if (success) {
       storage.addConnectionPoints(companionId, gift.points);
-      refreshProfile();
+      const newProfile = storage.getProfile();
+      setProfile(newProfile);
+      syncProfile(newProfile);
       return true;
     }
     return false;
-  }, [refreshProfile]);
+  }, [syncProfile]);
 
   const unlockConnectionTier = useCallback((companionId: string | number, tier: ConnectionLevel) => {
     const price = tier === 'trusted' ? 50 : 25;
@@ -202,35 +236,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const thresholds = GATING_CONFIG.connectionThresholds;
       const targetPoints = tier === 'trusted' ? thresholds.trusted : thresholds.close;
       storage.addConnectionPoints(companionId, targetPoints - (profile.connectionPoints[companionId] || 0));
-      refreshProfile();
+      const newProfile = storage.getProfile();
+      setProfile(newProfile);
+      syncProfile(newProfile);
       return true;
     }
     return false;
-  }, [profile.connectionPoints, refreshProfile]);
+  }, [profile.connectionPoints, syncProfile]);
 
   const leasePersonality = useCallback((mode: string) => {
     if (storage.spendHearts(15)) {
-      const profile = storage.getProfile();
-      if (!profile.unlockedModes.includes(mode)) {
-        profile.unlockedModes.push(mode);
-        storage.saveProfile(profile);
+      const p = storage.getProfile();
+      if (!p.unlockedModes.includes(mode)) {
+        p.unlockedModes.push(mode);
+        storage.saveProfile(p);
       }
-      refreshProfile();
+      setProfile(p);
+      syncProfile(p);
       return true;
     }
     return false;
-  }, [refreshProfile]);
+  }, [syncProfile]);
 
   const extendMessages = useCallback(() => {
     if (storage.spendHearts(5)) {
-      const profile = storage.getProfile();
-      profile.messageCountToday = Math.max(0, profile.messageCountToday - 10);
-      storage.saveProfile(profile);
-      refreshProfile();
+      const p = storage.getProfile();
+      p.messageCountToday = Math.max(0, p.messageCountToday - 10);
+      storage.saveProfile(p);
+      setProfile(p);
+      syncProfile(p);
       return true;
     }
     return false;
-  }, [refreshProfile]);
+  }, [syncProfile]);
 
   const signOut = async () => {
     setLoading(true);
@@ -271,10 +309,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
           if (verifyRes.ok) {
-            const profile = storage.getProfile();
-            profile.subscription = plan;
-            storage.saveProfile(profile);
-            refreshProfile();
+            const p = storage.getProfile();
+            p.subscription = plan;
+            storage.saveProfile(p);
+            setProfile(p);
+            syncProfile(p);
             showNotification(`Welcome to ${planDetails?.name}! Enjoy your premium experience. ✨`, 'success');
           } else {
             const errData = await verifyRes.json().catch(() => ({}));
@@ -313,10 +352,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
           if (verifyRes.ok) {
-            const profile = storage.getProfile();
-            profile.subscription = 'starter';
-            storage.saveProfile(profile);
-            refreshProfile();
+            const p = storage.getProfile();
+            p.subscription = 'starter';
+            storage.saveProfile(p);
+            setProfile(p);
+            syncProfile(p);
             showNotification("Starter Pass Activated! Unlimited chat enabled for the next 24 hours.", 'success');
           } else {
             const errData = await verifyRes.json().catch(() => ({}));
@@ -335,7 +375,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{
-      user, profile, loading, signUp, signIn, signInWithProvider, signOut,
+      user, profile, loading, syncProfile, signUp, signIn, signInWithProvider, signOut,
       updateConnection, incrementUsage, refreshProfile, upgradeSubscription,
       purchaseHearts, spendHearts, sendGift, unlockConnectionTier, leasePersonality, extendMessages, buyStarterPass
     }}>

@@ -5,12 +5,12 @@ export async function onRequestPost({ request, env }) {
     }
 
     try {
-        const { email, password } = await request.json();
+        const { username, password } = await request.json();
 
         // 1. Get user from DB
-        const user = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
+        const user = await env.DB.prepare("SELECT * FROM users WHERE username = ?").bind(username).first();
         if (!user) {
-            return new Response(JSON.stringify({ error: "Invalid email or password." }), { status: 401 });
+            return new Response(JSON.stringify({ error: "Invalid username or password." }), { status: 401 });
         }
 
         // 2. Verify Password
@@ -38,31 +38,24 @@ export async function onRequestPost({ request, env }) {
         const currentHash = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
 
         if (currentHash !== user.password_hash) {
-            return new Response(JSON.stringify({ error: "Invalid email or password." }), { status: 401 });
+            return new Response(JSON.stringify({ error: "Invalid username or password." }), { status: 401 });
         }
 
-        // 3. Create Session (Simple JWT-like signed cookie)
-        const payload = JSON.stringify({ id: user.id, email: user.email, exp: Date.now() + 86400000 });
+        // 3. Create Session (30 Days)
+        const payload = JSON.stringify({ id: user.id, username: user.username, displayName: user.display_name, exp: Date.now() + (30 * 86400000) });
         const secret = env.JWT_SECRET || "default_hush_hush_secret";
-
-        const key = await crypto.subtle.importKey(
-            "raw",
-            encoder.encode(secret),
-            { name: "HMAC", hash: "SHA-256" },
-            false,
-            ["sign"]
-        );
-
+        const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
         const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
         const token = btoa(payload) + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));
 
         return new Response(JSON.stringify({
             success: true,
-            user: { id: user.id, email: user.email }
+            user: { id: user.id, username: user.username, displayName: user.display_name },
+            profileData: JSON.parse(user.profile_data || "{}")
         }), {
             headers: {
                 "Content-Type": "application/json",
-                "Set-Cookie": `auth_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400`
+                "Set-Cookie": `auth_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000`
             }
         });
 

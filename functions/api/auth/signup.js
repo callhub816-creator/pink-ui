@@ -5,19 +5,19 @@ export async function onRequestPost({ request, env }) {
     }
 
     try {
-        const { email, password } = await request.json();
+        const { username, displayName, password, profileData } = await request.json();
 
-        if (!email || !password) {
-            return new Response(JSON.stringify({ error: "Email and Password are required." }), { status: 400 });
+        if (!username || !displayName || !password) {
+            return new Response(JSON.stringify({ error: "Username, Name, and Password are required." }), { status: 400 });
         }
 
-        // 1. Check if user already exists
-        const existingUser = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
+        // 1. Check if username taken
+        const existingUser = await env.DB.prepare("SELECT id FROM users WHERE username = ?").bind(username).first();
         if (existingUser) {
-            return new Response(JSON.stringify({ error: "User already exists with this email." }), { status: 400 });
+            return new Response(JSON.stringify({ error: "This username is already taken." }), { status: 400 });
         }
 
-        // 2. Hash Password (PBKDF2 - standard for WebCrypto)
+        // 2. Hash Password
         const salt = crypto.getRandomValues(new Uint8Array(16));
         const encoder = new TextEncoder();
         const baseKey = await crypto.subtle.importKey(
@@ -45,15 +45,24 @@ export async function onRequestPost({ request, env }) {
         // 3. Insert into DB
         const userId = crypto.randomUUID();
         await env.DB.prepare(
-            "INSERT INTO users (id, email, password_hash, password_salt, created_at) VALUES (?, ?, ?, ?, ?)"
-        ).bind(userId, email, passwordHash, passwordSalt, new Date().toISOString()).run();
+            "INSERT INTO users (id, username, display_name, password_hash, password_salt, profile_data, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        ).bind(userId, username, displayName, passwordHash, passwordSalt, JSON.stringify(profileData || {}), new Date().toISOString()).run();
+
+        // 4. Create Session Cookie (Login immediately after signup)
+        const payload = JSON.stringify({ id: userId, username, displayName, exp: Date.now() + (30 * 86400000) }); // 30 Days
+        const secret = env.JWT_SECRET || "default_hush_hush_secret";
+        const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+        const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+        const token = btoa(payload) + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));
 
         return new Response(JSON.stringify({
             success: true,
-            message: "Signup successful!",
-            user: { id: userId, email }
+            user: { id: userId, username, displayName }
         }), {
-            headers: { "Content-Type": "application/json" }
+            headers: {
+                "Content-Type": "application/json",
+                "Set-Cookie": `auth_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000`
+            }
         });
 
     } catch (err) {

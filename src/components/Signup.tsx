@@ -5,7 +5,8 @@ import { Mail, Lock, ArrowLeft, Heart, Sparkles, CheckCircle } from 'lucide-reac
 
 const Signup: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const { signUp } = useAuth();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -17,17 +18,13 @@ const Signup: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setError(null);
     setMessage(null);
     try {
-      const { data, error } = await signUp(email, password);
+      const { data, error } = await signUp(username, displayName, password);
       if (error) {
         setError(error.message || String(error));
         return;
       }
-      if (!data?.session) {
-        setMessage('Verification email sent! Please check your inbox.');
-      } else {
-        setMessage('Signed up successfully! Redirecting...');
-        setTimeout(() => window.location.pathname = '/', 1500);
-      }
+      setMessage('Account created! Syncing your data...');
+      setTimeout(() => window.location.pathname = '/', 1500);
     } catch (err: any) {
       setError(err?.message || String(err));
     } finally {
@@ -53,23 +50,40 @@ const Signup: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           <div className="w-16 h-16 bg-gradient-to-br from-[#FF9ACB] to-[#B28DFF] rounded-2xl flex items-center justify-center shadow-lg mb-4 -rotate-3">
             <Sparkles size={32} className="text-white fill-white/20" />
           </div>
-          <h2 className="text-3xl font-serif-display font-bold text-[#4A2040]">Join CallHub</h2>
-          <p className="text-[#8E6A88] text-sm mt-1">Start your journey with an AI companion.</p>
+          <h2 className="text-3xl font-serif-display font-bold text-[#4A2040]">Create Account</h2>
+          <p className="text-[#8E6A88] text-sm mt-1">Protect your rewards & history.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#5e3a58]/60 uppercase tracking-widest ml-1">Email Address</label>
+            <label className="text-xs font-bold text-[#5e3a58]/60 uppercase tracking-widest ml-1">Username (Login ID)</label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB] group-focus-within:text-[#B28DFF] transition-colors">
                 <Mail size={18} />
               </div>
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                placeholder="me@example.com"
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                placeholder="your_unique_handle"
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-white/50 border border-white/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-[#5e3a58]/60 uppercase tracking-widest ml-1">Your Name</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB] group-focus-within:text-[#B28DFF] transition-colors">
+                <Heart size={18} />
+              </div>
+              <input
+                type="text"
+                required
+                value={displayName}
+                placeholder="What she should call you"
+                onChange={(e) => setDisplayName(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-white/50 border border-white/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40"
               />
             </div>
@@ -85,7 +99,7 @@ const Signup: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 type="password"
                 required
                 value={password}
-                placeholder="Minimum 6 characters"
+                placeholder="Secure password"
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-white/50 border border-white/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40"
               />
@@ -114,7 +128,7 @@ const Signup: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <>
-                <span>Create Account</span>
+                <span>Secure My Account</span>
                 <Heart size={18} className="group-hover:fill-white transition-all" />
               </>
             )}
@@ -125,12 +139,7 @@ const Signup: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[#B28DFF]/10"></div>
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-transparent px-2 text-[#8E6A88] font-medium tracking-widest">Or sign up with</span>
-          </div>
         </div>
-
-        <AuthButtons />
 
         <p className="mt-8 text-center text-sm text-[#8E6A88]">
           Already have an account?{' '}
