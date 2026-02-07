@@ -27,7 +27,7 @@ type AuthContextType = {
   leasePersonality: (mode: string) => boolean;
   extendMessages: () => boolean;
   buyStarterPass: () => Promise<void>;
-  updateProfile: (data: { nickname?: string; avatarUrl?: string }) => Promise<void>;
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   claimDailyBonus: () => Promise<boolean>;
 };
 
@@ -264,13 +264,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await upgradeSubscription('starter');
   };
 
-  const updateProfile = async (data: { nickname?: string; avatarUrl?: string }) => {
+  const updateProfile = async (data: Partial<UserProfile>) => {
+    // If we're updating user info like name/avatar, update auth user state too
+    if (data.nickname && user) {
+      setUser({ ...user, displayName: data.nickname });
+    }
+
     const updated = { ...profile, ...data };
     setProfile(updated);
     storage.saveProfile(updated);
-    if (user) {
-      setUser({ ...user, displayName: data.nickname || user.displayName });
-    }
+
     await syncProfile(updated);
   };
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../src/contexts/AuthContext';
-import { X, User, Heart, Gift, LogOut, Check, Edit2, TrendingUp, Calendar, Sparkles } from 'lucide-react';
+import { X, User, Heart, Gift, LogOut, Check, Edit2, TrendingUp, Sparkles, Trash2 } from 'lucide-react';
 import { PROFILE_AVATARS } from '../constants';
 
 interface ProfileModalProps {
@@ -13,6 +13,18 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
     const [isEditingName, setIsEditingName] = useState(false);
     const [nickname, setNickname] = useState(profile.nickname || user?.displayName || '');
     const [selectedAvatar, setSelectedAvatar] = useState(profile.avatarUrl || PROFILE_AVATARS[0]);
+
+    // Body Scroll Lock
+    React.useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -166,6 +178,20 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                                 <p className="text-gray-400 text-[10px] italic py-1">No history yet.</p>
                             )}
                         </div>
+                        {/* Clear History Button (Only if history exists) */}
+                        {profile.earningsHistory && profile.earningsHistory.length > 0 && (
+                            <button
+                                onClick={async () => {
+                                    if (confirm('Clear entire earnings history?')) {
+                                        await updateProfile({ earningsHistory: [] });
+                                    }
+                                }}
+                                className="w-full mt-2 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-red-500 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all"
+                            >
+                                <Trash2 size={10} />
+                                Clear History
+                            </button>
+                        )}
                     </div>
 
                     {/* Laptop Logout */}
