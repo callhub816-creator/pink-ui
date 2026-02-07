@@ -20,7 +20,7 @@ type AuthContextType = {
   incrementUsage: () => number;
   refreshProfile: () => void;
   upgradeSubscription: (plan: SubscriptionPlan) => Promise<void>;
-  purchaseHearts: (amount: number) => void;
+  purchaseHearts: (amount: number) => Promise<void>;
   spendHearts: (amount: number) => boolean;
   sendGift: (companionId: string | number, giftId: string) => boolean;
   unlockConnectionTier: (companionId: string | number, tier: ConnectionLevel) => boolean;
@@ -218,18 +218,132 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newVal;
   };
 
-  const upgradeSubscription = async (plan: SubscriptionPlan) => {
-    const updated = { ...profile, subscription: plan };
-    setProfile(updated);
-    storage.saveProfile(updated);
-    await syncProfile(updated);
+  // Helper to load Razorpay SDK dynamically
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
   };
 
-  const purchaseHearts = (amount: number) => {
-    const updated = { ...profile, hearts: profile.hearts + amount };
-    setProfile(updated);
-    storage.saveProfile(updated);
-    syncProfile(updated);
+  const initiatePayment = async (amount: number, description: string, onSuccess: () => void) => {
+    const res = await loadRazorpay();
+    if (!res) {
+      showNotification('Razorpay SDK failed to load. Are you online?', 'error');
+      return;
+    }
+
+    try {
+      // 1. Create Order on Backend
+      const orderData = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amount * 100 }) // Razorpay expects paise
+      }).then((t) => t.json());
+
+      if (orderData.error) {
+        throw new Error(orderData.error);
+      }
+
+      // 2. Options for Razorpay
+      const options = {
+        key: orderData.key_id, // Enter the Key ID generated from the Dashboard
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "CallHub AI",
+        description: description,
+        image: "https://callhub.in/favicon.svg",
+        order_id: orderData.id,
+        handler: async function (response: any) {
+          // 3. Verify Payment on Backend
+          try {
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...response,
+                amount: amount,
+                type: 'purchase'
+              })
+            }).then((t) => t.json());
+
+            if (verifyRes.success) {
+              onSuccess();
+              // Add to history
+              const newRecord = {
+                id: Date.now().toString(),
+                type: 'purchase' as const,
+                amount: amount, // or hearts value
+                label: description,
+                timestamp: new Date().toISOString()
+              };
+              await updateProfile({
+                earningsHistory: [newRecord, ...(profile.earningsHistory || [])]
+              });
+              showNotification(`Payment Successful! ${description} added.`, 'success');
+            } else {
+              showNotification('Payment verification failed.', 'error');
+            }
+          } catch (error) {
+            console.error('Verify Error:', error);
+            showNotification('Payment verification error', 'error');
+          }
+        },
+        prefill: {
+          name: user?.displayName || 'User',
+          email: 'user@callhub.in',
+          contact: '9999999999'
+        },
+        notes: {
+          address: "CallHub AI Corp"
+        },
+        theme: {
+          color: "#FF9ACB"
+        }
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+
+    } catch (error: any) {
+      console.error('Payment Error:', error);
+      showNotification(error.message || 'Payment initiation failed', 'error');
+    }
+  };
+
+  const upgradeSubscription = async (plan: SubscriptionPlan) => {
+    // Determine price dynamically (Placeholder prices)
+    const prices: Record<string, number> = {
+      starter: 49,
+      core: 199,
+      plus: 499
+    };
+    const price = prices[plan] || 99;
+
+    await initiatePayment(price, `Upgrade to ${plan.toUpperCase()}`, async () => {
+      const updated = { ...profile, subscription: plan };
+      setProfile(updated);
+      storage.saveProfile(updated);
+      await syncProfile(updated);
+      showNotification(`Welcome to ${plan.toUpperCase()}! 🌟`, 'success');
+    });
+  };
+
+  const purchaseHearts = async (heartsAmount: number) => {
+    // Calculate price logic (approx ₹1 = 1.2 hearts for simplicity or use config)
+    // Using mapping from constants (reversed) or direct packs
+    // Just a placeholder logic: 1 Heart = ₹1 (roughly)
+    const price = Math.floor(heartsAmount * 0.8); // Example discount
+
+    await initiatePayment(price, `${heartsAmount} Hearts Pack`, async () => {
+      const updated = { ...profile, hearts: profile.hearts + heartsAmount };
+      setProfile(updated);
+      storage.saveProfile(updated);
+      await syncProfile(updated);
+    });
   };
 
   const spendHearts = (amount: number) => {
