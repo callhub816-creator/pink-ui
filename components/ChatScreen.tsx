@@ -286,18 +286,24 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
             <GiftIcon size={22} strokeWidth={2.5} />
           </button>
 
-          {/* Main Input Box (REFINED DESIGN) */}
+          {/* Main Input Box (NUCLEAR FOCUS FIX) */}
           <div className={`flex-1 flex items-center px-5 py-3 rounded-[24px] border-2 transition-all duration-300 ${isDarkMode
             ? 'bg-white/5 border-white/10 focus-within:border-pink-500/50'
-            : 'bg-white border-[#FFB6D9] focus-within:border-pink-500 shadow-[0_2px_15px_rgba(255,182,217,0.2)]'
+            : 'bg-white border-[#FF69B4] focus-within:border-[#FF1A8C] shadow-[0_0_15px_rgba(255,105,180,0.15)]'
             }`}>
             <input
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder={`Write something to ${persona.name}...`}
-              className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-[15px] font-medium placeholder:opacity-40 p-0"
-              style={{ color: isDarkMode ? 'white' : '#4A2040', boxShadow: 'none' }}
+              className="flex-1 bg-transparent text-[15px] font-medium placeholder:opacity-40 p-0"
+              style={{
+                color: isDarkMode ? 'white' : '#4A2040',
+                outline: 'none',
+                border: 'none',
+                boxShadow: 'none',
+                WebkitAppearance: 'none'
+              }}
             />
           </div>
 
