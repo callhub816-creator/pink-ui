@@ -15,7 +15,6 @@ import SafetyPage from './components/SafetyPage';
 import RefundPage from './components/RefundPage';
 import AdminPage from './components/AdminPage';
 import GuestChat from './GuestChat';
-import AgeGate from './components/AgeGate';
 import ErrorBoundary from './components/ErrorBoundary';
 import PersonaCreationModal from './components/PersonaCreationModal';
 import ShopModal from './components/ShopModal';
@@ -218,7 +217,6 @@ const AppContent: React.FC = () => {
   return (
     <div className={`min-h-screen w-full ${isDarkMode ? 'bg-[#0B0E14]' : 'bg-[#FDF2F8]'} relative overflow-x-hidden font-sans transition-colors duration-500`}>
 
-      <AgeGate />
       <IntroduceYourself onComplete={(info) => {
         // Model will remember this via local storage set in component
         console.log("User introduced:", info);

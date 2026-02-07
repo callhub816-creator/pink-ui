@@ -25,15 +25,15 @@ const AuthScreen: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#FDF2F8] p-4 relative overflow-hidden font-sans">
+        <div className="min-h-screen w-full flex items-center justify-center bg-[#FDF2F8] p-4 relative overflow-hidden font-sans">
             {/* Animated Background Orbs */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
                 <div className="absolute top-[5%] left-[5%] w-64 h-64 bg-[#FF9ACB]/20 rounded-full blur-[100px] animate-pulse" />
                 <div className="absolute bottom-[5%] right-[5%] w-80 h-80 bg-[#B28DFF]/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
             </div>
 
-            {/* Main Auth Container */}
-            <div className="relative z-10 w-full flex flex-col items-center max-w-[400px]">
+            {/* Main Auth Container - Direct Card */}
+            <div className="relative z-10 w-full flex justify-center py-2 animate-in fade-in zoom-in duration-700">
                 {view === 'login' ? (
                     <Login onSwitchToSignup={() => toggleView('signup')} />
                 ) : (
