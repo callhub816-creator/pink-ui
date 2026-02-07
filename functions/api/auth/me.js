@@ -36,6 +36,14 @@ export async function onRequestGet({ request, env }) {
             return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401 });
         }
 
+        // Fetch latest profile from DB
+        if (env.DB) {
+            const user = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(payload.id).first();
+            if (user) {
+                payload.profileData = JSON.parse(user.profile_data || "{}");
+            }
+        }
+
         return new Response(JSON.stringify(payload), { headers: { "Content-Type": "application/json" } });
 
     } catch (err) {

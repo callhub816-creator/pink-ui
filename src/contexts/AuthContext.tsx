@@ -69,9 +69,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const res = await fetch('/api/auth/me');
         if (res.ok) {
           const userData = await res.json();
-          setUser(userData);
-          // Optional: Fetch latest profile from DB if user is logged in
-          const loginRes = await fetch('/api/auth/login_check', { method: 'POST' }); // Dummy or reuse /me if it returns profile
+          setUser({ id: userData.id, username: userData.username, displayName: userData.displayName });
+
+          if (userData.profileData) {
+            storage.saveProfile(userData.profileData);
+            setProfile(userData.profileData);
+          }
         }
       } catch (err) {
         console.debug('Auth check failed - likely guest mode');
