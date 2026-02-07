@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Lock, Heart, Sparkles, Shield, Eye, EyeOff } from 'lucide-react';
+import { useNotification } from '../../components/NotificationProvider';
+import { User, Lock, Heart, Sparkles, Shield, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup }) => {
   const { signIn } = useAuth();
+  const { showNotification } = useNotification();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,17 +27,22 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
       const result = await signIn(username, password);
 
       if (result && result.error) {
-        // Since we updated AuthContext to return { message }, use it directly
         const msg = result.error.message || 'Invalid username or password';
-        console.log('Login failed with message:', msg);
         setError(msg);
+        showNotification(msg, 'error');
+        // Final fallback alert if user still misses it
+        if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('user')) {
+          console.log('Login Error Triggered:', msg);
+        }
         return;
       }
 
       // Success
       window.location.href = '/';
     } catch (err: any) {
-      setError('An unexpected error occurred. Please try again.');
+      const failMsg = 'Connection Error. Try again.';
+      setError(failMsg);
+      showNotification(failMsg, 'error');
     } finally {
       setLoading(false);
     }
@@ -90,8 +97,9 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
           </div>
 
           {error && (
-            <div className="bg-red-50 border-2 border-red-500 py-3 px-4 rounded-2xl animate-shake shadow-lg shadow-red-200">
-              <p className="text-[14px] text-red-600 text-center font-bold">{error}</p>
+            <div className="bg-red-50 border-2 border-red-500 py-3 px-4 rounded-[20px] animate-shake shadow-[0_10px_30px_rgba(239,68,68,0.2)] flex items-center gap-3">
+              <AlertCircle className="text-red-500 shrink-0" size={20} />
+              <p className="text-[14px] text-red-600 font-bold leading-tight">{error}</p>
             </div>
           )}
 
