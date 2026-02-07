@@ -30,7 +30,7 @@ interface Message {
 }
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, isDarkMode, onOpenShop }) => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { showNotification } = useNotification();
   const { isMessageLimitReached, isNightTimeLocked } = useGating();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -136,7 +136,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
     const userMemory = storage.getMemory(persona.id);
     const personaSummary = storage.getSummary(persona.id);
     const rawUserInfo = localStorage.getItem('callhub_user_info');
-    const userInfo = rawUserInfo ? JSON.parse(rawUserInfo) : { name: 'User', age: '18', lookingFor: 'ROMANCE' };
+    const userInfo = rawUserInfo ? JSON.parse(rawUserInfo) : {
+      name: user?.displayName || 'User',
+      age: '24',
+      lookingFor: 'ROMANCE'
+    };
+
+    // Auto-update name from logged in user profile
+    if (user?.displayName) userInfo.name = user.displayName;
 
     const goalInstruction = userInfo.lookingFor === 'HEALING'
       ? "Be supportive, calm, and focus on emotional healing. User is looking for comfort."
