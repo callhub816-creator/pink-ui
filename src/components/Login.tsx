@@ -53,9 +53,9 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
           <p className="text-[#8E6A88] text-xs">Chat with your AI companion</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-[#4A2040] mb-1.5 ml-1">Username</label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-[#4A2040] ml-1">Username</label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB]">
                 <User size={18} />
@@ -69,13 +69,13 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
                   setUsername(e.target.value);
                   if (error) setError(null);
                 }}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:border-[#FF9ACB] transition-all text-[#4A2040] placeholder-gray-400 text-sm"
+                className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-[18px] focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/20 focus:border-[#FF9ACB] transition-all text-[#4A2040] placeholder-gray-400 text-[15px]"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[#4A2040] mb-1.5 ml-1">Password</label>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-[#4A2040] ml-1">Password</label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB]">
                 <Lock size={18} />
@@ -89,7 +89,7 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
                   setPassword(e.target.value);
                   if (error) setError(null);
                 }}
-                className="w-full pl-11 pr-12 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:border-[#FF9ACB] transition-all text-[#4A2040] placeholder-gray-400 text-sm"
+                className={`w-full pl-11 pr-12 py-3.5 bg-white border ${error ? 'border-[#FF9ACB] ring-1 ring-[#FF9ACB]/30' : 'border-gray-200'} rounded-[18px] focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/20 focus:border-[#FF9ACB] transition-all text-[#4A2040] placeholder-gray-400 text-[15px] password-input`}
               />
               <button
                 type="button"
@@ -99,24 +99,24 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            {/* ERROR MESSAGE PLACED EXACTLY LIKE SCREENSHOT */}
+            {/* CLEAN RED ERROR TEXT UNDER BOX */}
             {error && (
-              <p className="text-[13px] text-red-500 mt-2 ml-1 animate-in fade-in slide-in-from-top-1">
+              <p className="text-[13px] text-red-500 mt-1.5 ml-1 font-medium transition-all animate-in fade-in slide-in-from-top-1">
                 Please enter valid credentials
               </p>
             )}
           </div>
 
-          <div className="flex items-center justify-between px-1">
+          <div className="flex items-center justify-between px-1 pt-1">
             <label className="flex items-center gap-2 cursor-pointer group">
               <input
                 type="checkbox"
-                className="w-4 h-4 rounded border-gray-300 text-[#FF9ACB] focus:ring-[#FF9ACB]/30 cursor-pointer"
+                className="w-4.5 h-4.5 rounded border-gray-300 text-[#FF9ACB] focus:ring-[#FF9ACB]/30 cursor-pointer"
                 defaultChecked
               />
-              <span className="text-sm text-[#8E6A88] group-hover:text-[#4A2040] transition-colors">Stay Logged in</span>
+              <span className="text-[14px] text-[#8E6A88] font-medium group-hover:text-[#4A2040] transition-colors">Stay Logged in</span>
             </label>
-            <button type="button" className="text-sm text-[#FF9ACB] hover:text-[#D53F8C] font-medium transition-colors">
+            <button type="button" className="text-[14px] text-[#FF9ACB] hover:text-[#D53F8C] font-semibold transition-colors">
               Forgot Password?
             </button>
           </div>
@@ -124,11 +124,27 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-gradient-to-r from-[#FF9ACB] to-[#B28DFF] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 group mt-2"
+            className="w-full py-4 bg-gradient-to-r from-[#FF9ACB] to-[#B28DFF] text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 group mt-4 text-[16px]"
           >
             {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Login</span>}
           </button>
         </form>
+
+        <style>{`
+          /* HIDE BROWSER DEFAULT PASSWORD REVEAL */
+          .password-input::-ms-reveal,
+          .password-input::-ms-clear {
+            display: none;
+          }
+          input[type="password"]::-webkit-contacts-auto-fill-button,
+          input[type="password"]::-webkit-credentials-auto-fill-button {
+            visibility: hidden;
+            display: none !important;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+          }
+        `}</style>
 
         <p className="text-center text-xs text-[#8E6A88] mt-4">
           No account?{' '}
