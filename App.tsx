@@ -29,7 +29,6 @@ interface ChatSession {
 }
 
 import { NotificationProvider, useNotification } from './components/NotificationProvider';
-import IntroduceYourself from './components/IntroduceYourself';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import WalletWidget from './components/WalletWidget';
 import AuthScreen from './src/components/AuthScreen';
@@ -217,10 +216,6 @@ const AppContent: React.FC = () => {
   return (
     <div className={`min-h-screen w-full ${isDarkMode ? 'bg-[#0B0E14]' : 'bg-[#FDF2F8]'} relative overflow-x-hidden font-sans transition-colors duration-500`}>
 
-      <IntroduceYourself onComplete={(info) => {
-        // Model will remember this via local storage set in component
-        console.log("User introduced:", info);
-      }} />
 
       {/* Floating Wallet */}
       {!activeChatSession && (
