@@ -140,8 +140,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
     const rawUserInfo = localStorage.getItem('callhub_user_info');
     const userInfo = rawUserInfo ? JSON.parse(rawUserInfo) : { age: '24', lookingFor: 'ROMANCE' };
 
-    // We strictly use the Account Display Name if it exists
-    const accountName = user?.displayName || user?.username || 'User';
+    // We strictly use the Account Display Name or Custom Nickname if it exists
+    const accountName = profile.nickname || user?.displayName || user?.username || 'User';
     userInfo.name = accountName;
 
     const goalInstruction = userInfo.lookingFor === 'HEALING'

@@ -27,6 +27,8 @@ type AuthContextType = {
   leasePersonality: (mode: string) => boolean;
   extendMessages: () => boolean;
   buyStarterPass: () => Promise<void>;
+  updateProfile: (data: { nickname?: string; avatarUrl?: string }) => Promise<void>;
+  claimDailyBonus: () => Promise<boolean>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -231,11 +233,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await upgradeSubscription('starter');
   };
 
+  const updateProfile = async (data: { nickname?: string; avatarUrl?: string }) => {
+    const updated = { ...profile, ...data };
+    setProfile(updated);
+    storage.saveProfile(updated);
+    if (user) {
+      setUser({ ...user, displayName: data.nickname || user.displayName });
+    }
+    await syncProfile(updated);
+  };
+
+  const claimDailyBonus = async () => {
+    const today = new Date().toDateString();
+    if (profile.lastDailyBonusClaim === today) {
+      showNotification("You've already claimed your daily bonus! Come back tomorrow. ✨", 'info');
+      return false;
+    }
+
+    const bonusAmount = 10;
+    const newRecord = {
+      id: Date.now().toString(),
+      type: 'bonus' as const,
+      amount: bonusAmount,
+      label: 'Daily Login Bonus',
+      timestamp: new Date().toISOString()
+    };
+
+    const updated = {
+      ...profile,
+      hearts: (profile.hearts || 0) + bonusAmount,
+      lastDailyBonusClaim: today,
+      earningsHistory: [newRecord, ...(profile.earningsHistory || [])].slice(0, 50)
+    };
+
+    setProfile(updated);
+    storage.saveProfile(updated);
+    await syncProfile(updated);
+    showNotification(`Daily bonus claimed! +${bonusAmount} Hearts added to your wallet. ❤️`, 'success');
+    return true;
+  };
+
   return (
     <AuthContext.Provider value={{
       user, profile, loading, syncProfile, signUp, signIn, signInWithProvider, signOut,
       updateConnection, incrementUsage, refreshProfile, upgradeSubscription, purchaseHearts,
-      spendHearts, sendGift, unlockConnectionTier, leasePersonality, extendMessages, buyStarterPass
+      spendHearts, sendGift, unlockConnectionTier, leasePersonality, extendMessages, buyStarterPass,
+      updateProfile, claimDailyBonus
     }}>
       {children}
     </AuthContext.Provider>

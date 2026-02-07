@@ -32,8 +32,18 @@ export type SubscriptionPlan = 'free' | 'starter' | 'core' | 'plus';
 
 export type ConnectionLevel = 'stranger' | 'friend' | 'close' | 'trusted';
 
+export interface EarningRecord {
+  id: string;
+  type: 'bonus' | 'purchase' | 'mission';
+  amount: number;
+  label: string;
+  timestamp: string;
+}
+
 export interface UserProfile {
   id: string;
+  nickname?: string;
+  avatarUrl?: string;
   subscription: SubscriptionPlan;
   connectionPoints: Record<string | number, number>; // companionId -> points
   messageCountToday: number;
@@ -43,6 +53,8 @@ export interface UserProfile {
   hearts: number; // Virtual balance
   midnightPassExpiry?: string; // ISO date for expiration
   sessionsCount?: number; // To track retention nudges logic
+  lastDailyBonusClaim?: string; // ISO date
+  earningsHistory: EarningRecord[];
 }
 
 export interface Gift {

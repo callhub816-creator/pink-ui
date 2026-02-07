@@ -176,7 +176,7 @@ export const storage = {
       if (raw) return JSON.parse(raw);
     } catch (e) { }
 
-    // Default profile for new users (Free tier to test Gating)
+    // Default profile for new users
     return {
       id: 'local_user',
       subscription: 'free',
@@ -185,9 +185,11 @@ export const storage = {
       lastActive: new Date().toISOString(),
       voiceMinutesLeft: 0,
       unlockedModes: [],
-      hearts: 20, // Reduced from 500 (test mode) to 20 for production gating
+      hearts: 20,
       midnightPassExpiry: undefined,
-      sessionsCount: 0
+      sessionsCount: 0,
+      earningsHistory: [],
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Anya'
     };
   },
 
@@ -249,6 +251,14 @@ export const storage = {
     profile.lastActive = new Date().toISOString();
     storage.saveProfile(profile);
     return profile.messageCountToday;
+  },
+
+  getUsage: () => {
+    return parseInt(localStorage.getItem('callhub_global_usage') || '0');
+  },
+
+  saveUsage: (val: number) => {
+    localStorage.setItem('callhub_global_usage', val.toString());
   },
 
   // --- TASK 2: MEMORY ILLUSION ---

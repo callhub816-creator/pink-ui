@@ -127,6 +127,19 @@ export const GATING_CONFIG = {
   }
 };
 
+export const PROFILE_AVATARS = [
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Anya',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Leo',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Milo',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jasper',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella'
+];
+
 export const GIFT_ITEMS: Gift[] = [
   { id: 'gift_rose', name: 'Red Rose', icon: '🌹', price: 10, points: 50, category: 'sweet' },
   { id: 'gift_coffee', name: 'Coffee', icon: '☕', price: 20, points: 100, category: 'warm' },

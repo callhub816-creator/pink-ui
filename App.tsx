@@ -18,7 +18,8 @@ import GuestChat from './GuestChat';
 import ErrorBoundary from './components/ErrorBoundary';
 import PersonaCreationModal from './components/PersonaCreationModal';
 import ShopModal from './components/ShopModal';
-import { Sparkles, Heart, Phone, Lock, Trash2, MessageCircle, Shield } from 'lucide-react';
+import ProfileModal from './components/ProfileModal';
+import { Sparkles, Heart, Phone, Lock, Trash2, MessageCircle, Shield, User } from 'lucide-react';
 import { ModeCardData, Persona } from './types';
 import { PERSONAS, MODE_CARDS } from './constants';
 import { storage } from './utils/storage';
@@ -49,7 +50,7 @@ const AppContent: React.FC = () => {
   const { showNotification } = useNotification();
   const [currentPage, setCurrentPage] = useState<'home' | 'about' | 'privacy' | 'terms' | 'faq' | 'safety' | 'refund' | 'admin' | 'guest-chat'>('home');
   const [isDarkMode, setIsDarkMode] = useState(false); // Default to Pink Theme (Light Mode)
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const galleryRef = useRef<HTMLDivElement>(null);
   const vibeRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +90,7 @@ const AppContent: React.FC = () => {
   const [viewingProfile, setViewingProfile] = useState<{ persona: Persona, avatarUrl?: string } | null>(null);
   const [selectedCreationMode, setSelectedCreationMode] = useState<ModeCardData | null>(null);
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // REMOVED GLOBAL ALERT - Now handled in ChatScreen per persona
 
@@ -217,16 +219,31 @@ const AppContent: React.FC = () => {
     <div className={`min-h-screen w-full ${isDarkMode ? 'bg-[#0B0E14]' : 'bg-[#FDF2F8]'} relative overflow-x-hidden font-sans transition-colors duration-500`}>
 
 
-      {/* Floating Wallet */}
-      {!activeChatSession && (
-        <div className="fixed top-5 right-5 z-[60]">
+      {/* Floating Header Actions */}
+      {!activeChatSession && user && (
+        <div className="fixed top-5 right-5 z-[60] flex items-center gap-3">
           <WalletWidget isDarkMode={isDarkMode} onOpenShop={() => setIsShopOpen(true)} />
+          <button
+            onClick={() => setIsProfileOpen(true)}
+            className="w-12 h-12 rounded-full border-2 border-white shadow-lg overflow-hidden bg-white hover:scale-105 active:scale-95 transition-all"
+          >
+            <img
+              src={profile.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Anya'}
+              alt="Profile"
+              className="w-full h-full object-cover"
+            />
+          </button>
         </div>
       )}
 
       {/* Shop Modal */}
       {isShopOpen && (
         <ShopModal isDarkMode={isDarkMode} onClose={() => setIsShopOpen(false)} />
+      )}
+
+      {/* Profile Modal */}
+      {isProfileOpen && (
+        <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
       )}
 
       {/* Chat Screen Overlay */}
