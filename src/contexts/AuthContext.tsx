@@ -134,8 +134,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login failed');
+
+      // Handle case where response might not be JSON
+      const contentType = res.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Server Error: ${res.status}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Invalid username or password');
+      }
 
       localStorage.setItem('auth_token', data.token);
       setUser(data.user);
@@ -144,8 +156,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshProfile();
       }
       return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error };
+    } catch (err: any) {
+      console.error('AuthContext signIn catch:', err);
+      // Ensure we return an object with an error string, not just the Error object
+      return { data: null, error: { message: err.message || 'Login failed' } };
     } finally {
       setLoading(false);
     }

@@ -22,22 +22,20 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
     setError(null);
 
     try {
-      console.log('Attempting login for:', username);
       const result = await signIn(username, password);
 
       if (result && result.error) {
-        // Get the most specific error message possible
-        const errorMessage = result.error.message || result.error.toString() || 'Invalid credentials';
-        console.error('Login error details:', result.error);
-        setError(errorMessage);
+        // Since we updated AuthContext to return { message }, use it directly
+        const msg = result.error.message || 'Invalid username or password';
+        console.log('Login failed with message:', msg);
+        setError(msg);
         return;
       }
 
-      console.log('Login successful, redirecting...');
+      // Success
       window.location.href = '/';
     } catch (err: any) {
-      console.error('Unexpected login crash:', err);
-      setError('Connection failed. Please check your internet.');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
