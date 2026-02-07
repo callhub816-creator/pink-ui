@@ -128,16 +128,16 @@ export const GATING_CONFIG = {
 };
 
 export const PROFILE_AVATARS = [
-  'https://api.dicebear.com/9.x/micah/svg?seed=Felix&baseColor=f9c9b6',
-  'https://api.dicebear.com/9.x/micah/svg?seed=Christopher&baseColor=ac6651',
-  'https://api.dicebear.com/9.x/micah/svg?seed=Mason&marketing=true',
-  'https://api.dicebear.com/9.x/micah/svg?seed=Ryan&baseColor=f9c9b6',
-  'https://api.dicebear.com/9.x/micah/svg?seed=Jack',
-  'https://api.dicebear.com/9.x/micah/svg?seed=James&baseColor=ac6651',
-  'https://api.dicebear.com/9.x/micah/svg?seed=Alexander',
-  'https://api.dicebear.com/9.x/micah/svg?seed=William',
-  'https://api.dicebear.com/9.x/micah/svg?seed=Aiden&mouth=smile',
-  'https://api.dicebear.com/9.x/micah/svg?seed=Ethan'
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&eyes=happy&mouth=smile&eyebrows=default&clothing=hoodie&top=shortHair',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Chase&eyes=default&mouth=default&eyebrows=up&clothing=collarAndSweater&top=shortHairDreads01',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Arthur&eyes=happy&mouth=smile&eyebrows=default&clothing=blazerAndShirt&top=shortHairTheCaesar',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jude&eyes=default&mouth=default&eyebrows=default&clothing=shirtCrewNeck&top=shortHairFrizzle',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Sawyer&eyes=wink&mouth=smile&eyebrows=up&clothing=hoodie&top=shortHairShaggyMullet',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Easton&eyes=happy&mouth=smile&eyebrows=default&clothing=shirtCrewNeck&top=shortHairSides',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Hudson&eyes=default&mouth=default&eyebrows=up&clothing=graphicShirt&top=shortHairTheCaesarSidePart',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Caleb&eyes=happy&mouth=smile&eyebrows=default&clothing=hoodie&accessories=sunglasses',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Miles&eyes=default&mouth=default&eyebrows=up&clothing=blazerAndSweater&top=shortHair',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Leo&eyes=happy&mouth=smile&eyebrows=default&clothing=shirtVNeck&top=shortHairCurly'
 ];
 
 export const GIFT_ITEMS: Gift[] = [
