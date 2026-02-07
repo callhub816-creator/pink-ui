@@ -70,7 +70,9 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
           </div>
 
           {error && (
-            <p className="text-[10px] text-red-500 text-center font-bold px-2">{error}</p>
+            <div className="bg-red-50 border border-red-100 py-2 px-3 rounded-xl">
+              <p className="text-[11px] text-red-500 text-center font-bold">{error}</p>
+            </div>
           )}
 
           <button

@@ -86,8 +86,16 @@ const Signup: React.FC<{ onSwitchToLogin: () => void }> = ({ onSwitchToLogin }) 
             />
           </div>
 
-          {error && <p className="text-[10px] text-red-500 text-center font-bold px-2">{error}</p>}
-          {message && <p className="text-[10px] text-green-500 text-center font-bold px-2">{message}</p>}
+          {error && (
+            <div className="bg-red-50 border border-red-100 py-2 px-3 rounded-xl">
+              <p className="text-[11px] text-red-500 text-center font-bold">{error}</p>
+            </div>
+          )}
+          {message && (
+            <div className="bg-green-50 border border-green-100 py-2 px-3 rounded-xl">
+              <p className="text-[11px] text-green-600 text-center font-bold">{message}</p>
+            </div>
+          )}
 
           <button
             type="submit"

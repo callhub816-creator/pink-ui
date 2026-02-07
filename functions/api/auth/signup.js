@@ -64,7 +64,8 @@ export async function onRequestPost({ request, env }) {
             user: { id: userId, username, displayName }
         }), {
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Set-Cookie": `auth_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`
             }
         });
 
