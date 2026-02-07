@@ -138,16 +138,18 @@ export const GATING_CONFIG = {
 };
 
 export const PROFILE_AVATARS = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&eyes=happy&mouth=smile&eyebrows=default&clothing=hoodie&top=shortHair',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Chase&eyes=default&mouth=default&eyebrows=up&clothing=collarAndSweater&top=shortHairDreads01',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Arthur&eyes=happy&mouth=smile&eyebrows=default&clothing=blazerAndShirt&top=shortHairTheCaesar',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jude&eyes=default&mouth=default&eyebrows=default&clothing=shirtCrewNeck&top=shortHairFrizzle',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Sawyer&eyes=wink&mouth=smile&eyebrows=up&clothing=hoodie&top=shortHairShaggyMullet',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Easton&eyes=happy&mouth=smile&eyebrows=default&clothing=shirtCrewNeck&top=shortHairSides',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Hudson&eyes=default&mouth=default&eyebrows=up&clothing=graphicShirt&top=shortHairTheCaesarSidePart',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Caleb&eyes=happy&mouth=smile&eyebrows=default&clothing=hoodie&accessories=sunglasses',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Miles&eyes=default&mouth=default&eyebrows=up&clothing=blazerAndSweater&top=shortHair',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Leo&eyes=happy&mouth=smile&eyebrows=default&clothing=shirtVNeck&top=shortHairCurly'
+  'https://randomuser.me/api/portraits/men/1.jpg',
+  'https://randomuser.me/api/portraits/men/3.jpg',
+  'https://randomuser.me/api/portraits/men/7.jpg',
+  'https://randomuser.me/api/portraits/men/9.jpg',
+  'https://randomuser.me/api/portraits/men/11.jpg',
+  'https://randomuser.me/api/portraits/men/13.jpg',
+  'https://randomuser.me/api/portraits/men/22.jpg',
+  'https://randomuser.me/api/portraits/men/32.jpg',
+  'https://randomuser.me/api/portraits/men/45.jpg',
+  'https://randomuser.me/api/portraits/men/57.jpg',
+  'https://randomuser.me/api/portraits/men/62.jpg',
+  'https://randomuser.me/api/portraits/men/75.jpg'
 ];
 
 export const GIFT_ITEMS: Gift[] = [
