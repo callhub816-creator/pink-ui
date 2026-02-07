@@ -125,10 +125,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
       }
     }
 
+    // Always add user message to state and storage (Fixed: Now shows Gifts in chat)
+    setMessages(prev => [...prev, newUserMsg]);
+    storage.saveMessage(persona.id, { ...newUserMsg, timestamp: newUserMsg.timestamp.toISOString() });
+
+    // Only clear input if we sent what was in the input box
     if (!resendText) {
-      setMessages(prev => [...prev, newUserMsg]);
       setInputText('');
-      storage.saveMessage(persona.id, { ...newUserMsg, timestamp: newUserMsg.timestamp.toISOString() });
     }
 
     setIsTyping(true);
@@ -327,12 +330,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
           <button
             onClick={() => handleSend()}
             disabled={!inputText.trim() || isTyping}
-            className={`p-3.5 rounded-2xl transition-all duration-300 active:scale-90 shadow-lg flex items-center justify-center shrink-0 ${!inputText.trim() || isTyping
-              ? 'bg-gray-200 text-gray-400 shadow-none'
-              : 'bg-gradient-to-br from-[#FF9ACB] to-[#B28DFF] text-white shadow-pink-500/30 ring-2 ring-pink-200/50 hover:scale-105'
+            className={`p-3.5 rounded-2xl transition-all duration-300 active:scale-90 shadow-lg flex items-center justify-center shrink-0 bg-gradient-to-br from-[#FF9ACB] to-[#B28DFF] text-white ${!inputText.trim() || isTyping
+              ? 'opacity-50 cursor-not-allowed shadow-none grayscale-[0.3]'
+              : 'shadow-pink-500/30 ring-2 ring-pink-200/50 hover:scale-105'
               }`}
           >
-            <Send size={22} fill={!inputText.trim() || isTyping ? 'none' : 'currentColor'} strokeWidth={2.5} />
+            <Send size={22} fill="currentColor" strokeWidth={2.5} />
           </button>
         </div>
       </footer>
