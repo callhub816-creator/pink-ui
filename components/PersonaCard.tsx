@@ -229,15 +229,15 @@ const PersonaCard: React.FC<PersonaCardProps> = ({
               className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-bold text-[#4A2040] hover:bg-orange-50 rounded-xl transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm(`Reset connection with ${persona.name}? This will clear chat history.`)) {
+                if (confirm(`Are you sure you want to clear chat history with ${persona.name}? This cannot be undone.`)) {
                   storage.clearHistory(persona.id);
-                  showNotification('Connection reset successfully.', 'success');
+                  showNotification('Chat history cleared successfully.', 'success');
                 }
                 setShowMenu(false);
               }}
             >
               <RotateCcw size={14} className="text-orange-400" />
-              Reset Connection
+              Clear Chat History
             </button>
             <div className="h-px bg-[#4A2040]/5 my-1" />
             <button

@@ -129,15 +129,15 @@ export const GATING_CONFIG = {
 
 export const PROFILE_AVATARS = [
   'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Anya',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Leo',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jodi',
   'https://api.dicebear.com/7.x/avataaars/svg?seed=Milo',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jasper',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella'
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Leo',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Sara',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Ryan'
 ];
 
 export const GIFT_ITEMS: Gift[] = [

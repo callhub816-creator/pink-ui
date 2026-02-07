@@ -8,11 +8,12 @@ interface GiftSelectorProps {
     companionId: string | number;
     companionName: string;
     isDarkMode: boolean;
+    onGiftSent: (giftName: string, icon: string) => void;
 }
 
 import { useNotification } from './NotificationProvider';
 
-const GiftSelector: React.FC<GiftSelectorProps> = ({ onClose, companionId, companionName, isDarkMode }) => {
+const GiftSelector: React.FC<GiftSelectorProps> = ({ onClose, companionId, companionName, isDarkMode, onGiftSent }) => {
     const { profile, sendGift } = useAuth();
     const { showNotification } = useNotification();
 
@@ -20,6 +21,7 @@ const GiftSelector: React.FC<GiftSelectorProps> = ({ onClose, companionId, compa
         const success = sendGift(companionId, giftId);
         if (success) {
             showNotification(`You sent a ${giftName} ${icon} to ${companionName}. Trust deepened! ✨`, 'success');
+            onGiftSent(giftName, icon);
             onClose();
         } else {
             showNotification("Not enough Hearts! Refill your wallet to send gifts. ❤️", 'hearts');
