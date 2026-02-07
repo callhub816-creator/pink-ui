@@ -146,7 +146,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (!res.ok) {
-        throw new Error(data.error || 'Invalid username or password');
+        // Handle case where error might be a stringified object or raw string
+        let errorMessage = 'Invalid username or password';
+        if (data && data.error) {
+          errorMessage = data.error;
+        } else if (typeof data === 'string' && data.includes('{')) {
+          try {
+            const parsed = JSON.parse(data);
+            errorMessage = parsed.error || errorMessage;
+          } catch (e) { }
+        }
+        throw new Error(errorMessage);
       }
 
       localStorage.setItem('auth_token', data.token);
@@ -158,8 +168,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { data, error: null };
     } catch (err: any) {
       console.error('AuthContext signIn catch:', err);
-      // Ensure we return an object with an error string, not just the Error object
-      return { data: null, error: { message: err.message || 'Login failed' } };
+      // Clean up the error message if it's still JSON
+      let msg = err.message || 'Login failed';
+      if (msg.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(msg);
+          msg = parsed.error || msg;
+        } catch (e) { }
+      }
+      return { data: null, error: { message: msg } };
     } finally {
       setLoading(false);
     }

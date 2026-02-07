@@ -27,22 +27,15 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
       const result = await signIn(username, password);
 
       if (result && result.error) {
-        const msg = result.error.message || 'Invalid username or password';
-        setError(msg);
-        showNotification(msg, 'error');
-        // Final fallback alert if user still misses it
-        if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('user')) {
-          console.log('Login Error Triggered:', msg);
-        }
+        // AuthContext now handles the JSON cleaning, we just use it
+        setError(result.error.message);
         return;
       }
 
       // Success
       window.location.href = '/';
     } catch (err: any) {
-      const failMsg = 'Connection Error. Try again.';
-      setError(failMsg);
-      showNotification(failMsg, 'error');
+      setError('Connection failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -60,7 +53,7 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
           <p className="text-[#8E6A88] text-xs">Chat with your AI companion</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB]">
               <User size={18} />
@@ -70,8 +63,11 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
               required
               value={username}
               placeholder="Username"
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white/60 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40 text-sm"
+              onChange={(e) => {
+                setUsername(e.target.value);
+                if (error) setError(null);
+              }}
+              className="w-full pl-11 pr-4 py-3.5 bg-white/60 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40 text-sm"
             />
           </div>
 
@@ -84,8 +80,11 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
               required
               value={password}
               placeholder="Password"
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-11 pr-12 py-3 bg-white/60 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40 text-sm"
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError(null);
+              }}
+              className="w-full pl-11 pr-12 py-3.5 bg-white/60 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40 text-sm"
             />
             <button
               type="button"
@@ -96,10 +95,11 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
             </button>
           </div>
 
+          {/* ELEGANT IN-CARD ERROR */}
           {error && (
-            <div className="bg-red-50 border-2 border-red-500 py-3 px-4 rounded-[20px] animate-shake shadow-[0_10px_30px_rgba(239,68,68,0.2)] flex items-center gap-3">
-              <AlertCircle className="text-red-500 shrink-0" size={20} />
-              <p className="text-[14px] text-red-600 font-bold leading-tight">{error}</p>
+            <div className="bg-red-50/80 backdrop-blur-sm border border-red-200 py-3 px-4 rounded-2xl animate-shake flex items-center gap-2.5">
+              <AlertCircle className="text-red-500 shrink-0" size={16} />
+              <p className="text-[13px] text-red-600 font-semibold leading-tight">{error}</p>
             </div>
           )}
 
