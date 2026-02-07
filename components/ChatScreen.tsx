@@ -135,15 +135,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
     const intent = detectIntent(text);
     const userMemory = storage.getMemory(persona.id);
     const personaSummary = storage.getSummary(persona.id);
-    const rawUserInfo = localStorage.getItem('callhub_user_info');
-    const userInfo = rawUserInfo ? JSON.parse(rawUserInfo) : {
-      name: user?.displayName || 'User',
-      age: '24',
-      lookingFor: 'ROMANCE'
-    };
 
-    // Auto-update name from logged in user profile
-    if (user?.displayName) userInfo.name = user.displayName;
+    // AUTH NAME SYNC: Final Boss Level Override
+    const rawUserInfo = localStorage.getItem('callhub_user_info');
+    const userInfo = rawUserInfo ? JSON.parse(rawUserInfo) : { age: '24', lookingFor: 'ROMANCE' };
+
+    // We strictly use the Account Display Name if it exists
+    const accountName = user?.displayName || user?.username || 'User';
+    userInfo.name = accountName;
 
     const goalInstruction = userInfo.lookingFor === 'HEALING'
       ? "Be supportive, calm, and focus on emotional healing. User is looking for comfort."
@@ -151,7 +150,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
         ? "Be a casual, fun friend. Don't be too romantic. User is looking for a connection."
         : "Be flirtatious, deeply caring, and focus on building a romantic bond.";
 
-    const memoryHeader = `USER PROFILE: Name: ${userInfo.name}, Age: ${userInfo.age}, Goal: ${userInfo.lookingFor}. ${goalInstruction} PERSISTENT MEMORY: Facts: ${userMemory.facts?.join(', ') || 'None'}. Last Topic: ${userMemory.lastTopic}. Always refer to the user by their name (${userInfo.name}) and align your personality with their goal.`;
+    const memoryHeader = `CRITICAL SYSTEM INSTRUCTION: 
+    1. The User's name is "${userInfo.name}". 
+    2. NEVER use the word "User" as a name. 
+    3. Always address them as "${userInfo.name}" or using sweet terms like "jaan", "dear", "sweetheart" if appropriate for romance.
+    4. USER PROFILE: Name: ${userInfo.name}, Age: ${userInfo.age}, Goal: ${userInfo.lookingFor}. ${goalInstruction}
+    5. PERSISTENT MEMORY: Facts: ${userMemory.facts?.join(', ') || 'None'}. Last Topic: ${userMemory.lastTopic}.`;
 
     try {
       const res = await fetch('/chat', {
@@ -285,14 +289,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
           {/* Main Input Box (CLEAN DESIGN) */}
           <div className={`flex-1 flex items-center px-5 py-3.5 rounded-[22px] border transition-all duration-300 ${isDarkMode
             ? 'bg-white/5 border-white/10 focus-within:border-pink-500/50 focus-within:bg-white/10'
-            : 'bg-gray-50/50 border-gray-200 focus-within:bg-white focus-within:border-pink-400 focus-within:ring-4 focus-within:ring-pink-50 shadow-inner'
+            : 'bg-white border-pink-100 focus-within:border-pink-400 shadow-sm'
             }`}>
             <input
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder={`Write something to ${persona.name}...`}
-              className="flex-1 bg-transparent outline-none text-[15px] font-medium placeholder:opacity-40"
+              className="flex-1 bg-transparent outline-none ring-0 focus:ring-0 text-[15px] font-medium placeholder:opacity-40"
               style={{ color: isDarkMode ? 'white' : '#4A2040' }}
             />
           </div>
