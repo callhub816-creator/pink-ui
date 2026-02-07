@@ -60,11 +60,11 @@ export async function onRequestPost({ request, env }) {
 
         return new Response(JSON.stringify({
             success: true,
+            token,
             user: { id: userId, username, displayName }
         }), {
             headers: {
-                "Content-Type": "application/json",
-                "Set-Cookie": `auth_token=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
+                "Content-Type": "application/json"
             }
         });
 

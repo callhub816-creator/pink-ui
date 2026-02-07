@@ -1,8 +1,16 @@
 
 export async function onRequestGet({ request, env }) {
+    // Check both Cookie and Authorization header
     const cookieHeader = request.headers.get("Cookie") || "";
-    const cookies = Object.fromEntries(cookieHeader.split(";").map(c => c.trim().split("=")));
-    const token = cookies["auth_token"];
+    const authHeader = request.headers.get("Authorization") || "";
+
+    let token = null;
+    if (authHeader.startsWith("Bearer ")) {
+        token = authHeader.substring(7);
+    } else {
+        const cookies = Object.fromEntries(cookieHeader.split(";").map(c => c.trim().split("=")));
+        token = cookies["auth_token"];
+    }
 
     if (!token) {
         return new Response(JSON.stringify({ error: "Not logged in" }), { status: 401 });
@@ -52,8 +60,7 @@ export async function onRequestGet({ request, env }) {
     } catch (err) {
         return new Response(JSON.stringify({
             error: "Auth failed",
-            details: err.message,
-            stack: err.stack
+            details: err.message
         }), { status: 401 });
     }
 }
