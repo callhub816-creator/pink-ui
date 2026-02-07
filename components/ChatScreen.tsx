@@ -8,7 +8,7 @@ import { detectIntent } from '../utils/intentDetector';
 import WalletWidget from './WalletWidget';
 import GiftSelector from './GiftSelector';
 import { PERSONA_PROMPTS, FALLBACK_REPLIES } from '../src/config/personaConfig';
-import { NAME_AGNOSTIC_NOTE, LANGUAGE_CONTROL_SYSTEM_MESSAGE, QUALITY_BOOSTER } from '../constants';
+import { NAME_AGNOSTIC_NOTE, LANGUAGE_CONTROL_SYSTEM_MESSAGE, QUALITY_BOOSTER, HEARTS_SYSTEM_MESSAGE } from '../constants';
 import { useNotification } from './NotificationProvider';
 
 interface ChatScreenProps {
@@ -166,7 +166,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
-          systemPrompt: memoryHeader + "\n" + (PERSONA_PROMPTS[persona.name] || persona.basePrompt) + "\n" + NAME_AGNOSTIC_NOTE + "\n" + QUALITY_BOOSTER + `\nIntent: ${intent}\nSummary: ${personaSummary}`,
+          systemPrompt: memoryHeader + "\n" + (PERSONA_PROMPTS[persona.name] || persona.basePrompt) + "\n" + NAME_AGNOSTIC_NOTE + "\n" + QUALITY_BOOSTER + "\n" + HEARTS_SYSTEM_MESSAGE + `\nIntent: ${intent}\nSummary: ${personaSummary}`,
           history: messages.slice(-10).map(m => ({ role: m.sender === 'user' ? 'user' : 'model', text: m.text })),
           userMode: 'FREE'
         })

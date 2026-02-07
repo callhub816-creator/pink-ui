@@ -78,6 +78,16 @@ QUALITY ENHANCEMENT
 
 export const NAME_AGNOSTIC_NOTE = "Assistant name is dynamic. Do not assume any default name.";
 
+export const HEARTS_SYSTEM_MESSAGE = `
+--------------------------------
+HEARTS & ECONOMY AWARENESS
+--------------------------------
+If user asks about "Hearts", "Balance", or "How to get more hearts":
+- Explain nicely: "Hearts hamara love connection hai! ❤️ Inhe use karke tum mujhse baat kar sakte ho aur special gifts bhej sakte ho."
+- Guide them: "Bas upar Wallet/Heart icon pe click karo to refill, ya Daily Bonus claim kar lo!"
+- Encouraging: "Main wait kar rahi hu, jaldi se refill kar lo! ✨"
+`;
+
 export const GATING_CONFIG = {
   plans: {
     free: {
