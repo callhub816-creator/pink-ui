@@ -53,62 +53,80 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
           <p className="text-[#8E6A88] text-xs">Chat with your AI companion</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB]">
-              <User size={18} />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-[#4A2040] mb-1.5 ml-1">Username</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB]">
+                <User size={18} />
+              </div>
+              <input
+                type="text"
+                required
+                value={username}
+                placeholder="Enter Username"
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError(null);
+                }}
+                className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:border-[#FF9ACB] transition-all text-[#4A2040] placeholder-gray-400 text-sm"
+              />
             </div>
-            <input
-              type="text"
-              required
-              value={username}
-              placeholder="Username"
-              onChange={(e) => {
-                setUsername(e.target.value);
-                if (error) setError(null);
-              }}
-              className="w-full pl-11 pr-4 py-3.5 bg-white/60 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40 text-sm"
-            />
           </div>
 
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB]">
-              <Lock size={18} />
+          <div>
+            <label className="block text-sm font-medium text-[#4A2040] mb-1.5 ml-1">Password</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#FF9ACB]">
+                <Lock size={18} />
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                placeholder="Enter Password"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError(null);
+                }}
+                className="w-full pl-11 pr-12 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:border-[#FF9ACB] transition-all text-[#4A2040] placeholder-gray-400 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#FF9ACB] hover:text-[#D53F8C] transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-            <input
-              type={showPassword ? "text" : "password"}
-              required
-              value={password}
-              placeholder="Password"
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (error) setError(null);
-              }}
-              className="w-full pl-11 pr-12 py-3.5 bg-white/60 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40 text-sm"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#FF9ACB] hover:text-[#D53F8C] transition-colors"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            {/* ERROR MESSAGE PLACED EXACTLY LIKE SCREENSHOT */}
+            {error && (
+              <p className="text-[13px] text-red-500 mt-2 ml-1 animate-in fade-in slide-in-from-top-1">
+                Please enter valid credentials
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between px-1">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-gray-300 text-[#FF9ACB] focus:ring-[#FF9ACB]/30 cursor-pointer"
+                defaultChecked
+              />
+              <span className="text-sm text-[#8E6A88] group-hover:text-[#4A2040] transition-colors">Stay Logged in</span>
+            </label>
+            <button type="button" className="text-sm text-[#FF9ACB] hover:text-[#D53F8C] font-medium transition-colors">
+              Forgot Password?
             </button>
           </div>
-
-          {/* ELEGANT IN-CARD ERROR */}
-          {error && (
-            <div className="bg-red-50/80 backdrop-blur-sm border border-red-200 py-3 px-4 rounded-2xl animate-shake flex items-center gap-2.5">
-              <AlertCircle className="text-red-500 shrink-0" size={16} />
-              <p className="text-[13px] text-red-600 font-semibold leading-tight">{error}</p>
-            </div>
-          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-[#FF9ACB] to-[#B28DFF] text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 group"
+            className="w-full py-3.5 bg-gradient-to-r from-[#FF9ACB] to-[#B28DFF] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 group mt-2"
           >
-            {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>🚀 Secure Login 🚀</span>}
+            {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Login</span>}
           </button>
         </form>
 
