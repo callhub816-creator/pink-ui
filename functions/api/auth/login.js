@@ -10,7 +10,10 @@ export async function onRequestPost({ request, env }) {
         // 1. Get user from DB
         const user = await env.DB.prepare("SELECT * FROM users WHERE username = ?").bind(username).first();
         if (!user) {
-            return new Response(JSON.stringify({ error: "Invalid username or password." }), { status: 401 });
+            return new Response(JSON.stringify({ error: "Invalid username or password." }), {
+                status: 401,
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
         // 2. Verify Password
@@ -38,7 +41,10 @@ export async function onRequestPost({ request, env }) {
         const currentHash = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
 
         if (currentHash !== user.password_hash) {
-            return new Response(JSON.stringify({ error: "Invalid username or password." }), { status: 401 });
+            return new Response(JSON.stringify({ error: "Invalid username or password." }), {
+                status: 401,
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
         // 3. Create Session (30 Days)
