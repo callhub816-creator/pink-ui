@@ -175,6 +175,18 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
         throw new Error(data.error || data.details?.message || "Server Error");
       }
 
+      // --- HUMAN TYPING SIMULATION ---
+      // 1. Calculate thinking time (1.5s to 3s)
+      const thinkingTime = 1500 + Math.random() * 1000;
+      await new Promise(resolve => setTimeout(resolve, thinkingTime));
+
+      // 2. Calculate typing time based on length (~30 characters per second)
+      const typingSpeed = 30;
+      const typingTime = (data.text.length / typingSpeed) * 1000;
+
+      // Delay for typing (capped at 12 seconds so user doesn't wait forever)
+      await new Promise(resolve => setTimeout(resolve, Math.min(typingTime, 12000)));
+
       const modelMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'model',
