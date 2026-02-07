@@ -43,10 +43,13 @@ export async function onRequestPost({ request, env }) {
 
         // 3. Create Session (30 Days)
         const payload = JSON.stringify({ id: user.id, username: user.username, displayName: user.display_name, exp: Date.now() + (30 * 86400000) });
+        const payloadUint8 = encoder.encode(payload);
+        const payloadB64 = btoa(String.fromCharCode(...payloadUint8));
+
         const secret = env.JWT_SECRET || "default_hush_hush_secret";
         const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-        const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
-        const token = btoa(payload) + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));
+        const signature = await crypto.subtle.sign("HMAC", key, payloadUint8);
+        const token = payloadB64 + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));
 
         return new Response(JSON.stringify({
             success: true,
@@ -55,7 +58,7 @@ export async function onRequestPost({ request, env }) {
         }), {
             headers: {
                 "Content-Type": "application/json",
-                "Set-Cookie": `auth_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`
+                "Set-Cookie": `auth_token=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
             }
         });
 

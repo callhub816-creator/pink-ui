@@ -1,7 +1,7 @@
 
 export async function onRequestGet({ request, env }) {
     const cookieHeader = request.headers.get("Cookie") || "";
-    const cookies = Object.fromEntries(cookieHeader.split("; ").map(c => c.split("=")));
+    const cookies = Object.fromEntries(cookieHeader.split(";").map(c => c.trim().split("=")));
     const token = cookies["auth_token"];
 
     if (!token) {
@@ -10,7 +10,10 @@ export async function onRequestGet({ request, env }) {
 
     try {
         const [payloadB64, signatureB64] = token.split(".");
-        const payloadStr = atob(payloadB64);
+
+        const decoder = new TextDecoder();
+        const payloadUint8 = new Uint8Array(atob(payloadB64).split("").map(c => c.charCodeAt(0)));
+        const payloadStr = decoder.decode(payloadUint8);
         const payload = JSON.parse(payloadStr);
 
         // Check expiration
