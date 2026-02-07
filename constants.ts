@@ -128,16 +128,16 @@ export const GATING_CONFIG = {
 };
 
 export const PROFILE_AVATARS = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Christopher',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Mason',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Ryan',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=James',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Alexander',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=William',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Aiden',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Ethan'
+  'https://api.dicebear.com/9.x/micah/svg?seed=Felix&baseColor=f9c9b6',
+  'https://api.dicebear.com/9.x/micah/svg?seed=Christopher&baseColor=ac6651',
+  'https://api.dicebear.com/9.x/micah/svg?seed=Mason&marketing=true',
+  'https://api.dicebear.com/9.x/micah/svg?seed=Ryan&baseColor=f9c9b6',
+  'https://api.dicebear.com/9.x/micah/svg?seed=Jack',
+  'https://api.dicebear.com/9.x/micah/svg?seed=James&baseColor=ac6651',
+  'https://api.dicebear.com/9.x/micah/svg?seed=Alexander',
+  'https://api.dicebear.com/9.x/micah/svg?seed=William',
+  'https://api.dicebear.com/9.x/micah/svg?seed=Aiden&mouth=smile',
+  'https://api.dicebear.com/9.x/micah/svg?seed=Ethan'
 ];
 
 export const GIFT_ITEMS: Gift[] = [
