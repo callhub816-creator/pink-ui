@@ -90,8 +90,8 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-100 py-2.5 px-3 rounded-xl animate-shake">
-              <p className="text-[12px] text-red-600 text-center font-bold">{error}</p>
+            <div className="bg-red-50 border-2 border-red-500 py-3 px-4 rounded-2xl animate-shake shadow-lg shadow-red-200">
+              <p className="text-[14px] text-red-600 text-center font-bold">{error}</p>
             </div>
           )}
 
@@ -100,7 +100,7 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
             disabled={loading}
             className="w-full py-4 bg-gradient-to-r from-[#FF9ACB] to-[#B28DFF] text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 group"
           >
-            {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Sign In</span>}
+            {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>🚀 Secure Login 🚀</span>}
           </button>
         </form>
 
@@ -115,7 +115,7 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
           <div className="flex items-center gap-1.5">
             <Shield size={10} />
             <span className="text-[9px] font-bold uppercase tracking-widest text-center">
-              Strictly 18+ Only | Private & Secure
+              Strictly 18+ Only | Private v2.1
             </span>
           </div>
         </div>
