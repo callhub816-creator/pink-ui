@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Lock, Heart, Sparkles, CheckCircle, Shield } from 'lucide-react';
+import { User, Lock, Heart, Sparkles, CheckCircle, Shield, Eye, EyeOff } from 'lucide-react';
 
 const Signup: React.FC<{ onSwitchToLogin: () => void }> = ({ onSwitchToLogin }) => {
   const { signUp } = useAuth();
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -17,9 +18,9 @@ const Signup: React.FC<{ onSwitchToLogin: () => void }> = ({ onSwitchToLogin }) 
     setLoading(true);
     setError(null);
     try {
-      const { error: signUpError } = await signUp(username, displayName, password);
-      if (signUpError) {
-        setError(signUpError.message || 'Signup failed');
+      const result = await signUp(username, displayName, password);
+      if (result.error) {
+        setError(result.error.message || 'Signup failed');
         return;
       }
       setMessage('Account created! Fun starts now...');
@@ -77,22 +78,29 @@ const Signup: React.FC<{ onSwitchToLogin: () => void }> = ({ onSwitchToLogin }) 
               <Lock size={18} />
             </div>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               value={password}
               placeholder="Secure Password"
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white/60 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40 text-sm"
+              className="w-full pl-11 pr-12 py-3 bg-white/60 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF9ACB]/30 focus:bg-white transition-all text-[#4A2040] placeholder-[#8E6A88]/40 text-sm"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#FF9ACB] hover:text-[#D53F8C] transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-100 py-2 px-3 rounded-xl">
+            <div className="bg-red-50 border border-red-100 py-2.5 px-3 rounded-xl animate-shake">
               <p className="text-[11px] text-red-500 text-center font-bold">{error}</p>
             </div>
           )}
           {message && (
-            <div className="bg-green-50 border border-green-100 py-2 px-3 rounded-xl">
+            <div className="bg-green-50 border border-green-100 py-2.5 px-3 rounded-xl">
               <p className="text-[11px] text-green-600 text-center font-bold">{message}</p>
             </div>
           )}
@@ -125,6 +133,12 @@ const Signup: React.FC<{ onSwitchToLogin: () => void }> = ({ onSwitchToLogin }) 
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
       `}</style>
     </div>
   );
