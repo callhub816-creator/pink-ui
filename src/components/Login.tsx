@@ -13,19 +13,31 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username || !password) {
+      setError('Please enter both username and password');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+
     try {
+      console.log('Attempting login for:', username);
       const result = await signIn(username, password);
-      if (result.error) {
-        // Specifically catch the error message from the thrown Error object
-        const msg = result.error.message || 'Invalid username or password';
-        setError(msg);
+
+      if (result && result.error) {
+        // Get the most specific error message possible
+        const errorMessage = result.error.message || result.error.toString() || 'Invalid credentials';
+        console.error('Login error details:', result.error);
+        setError(errorMessage);
         return;
       }
+
+      console.log('Login successful, redirecting...');
       window.location.href = '/';
     } catch (err: any) {
-      setError('Login failed. Please check your credentials.');
+      console.error('Unexpected login crash:', err);
+      setError('Connection failed. Please check your internet.');
     } finally {
       setLoading(false);
     }
@@ -81,7 +93,7 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
 
           {error && (
             <div className="bg-red-50 border border-red-100 py-2.5 px-3 rounded-xl animate-shake">
-              <p className="text-[11px] text-red-500 text-center font-bold">{error}</p>
+              <p className="text-[12px] text-red-600 text-center font-bold">{error}</p>
             </div>
           )}
 
@@ -110,6 +122,16 @@ const Login: React.FC<{ onSwitchToSignup: () => void }> = ({ onSwitchToSignup })
           </div>
         </div>
       </div>
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-shake {
+          animation: shake 0.2s ease-in-out 0s 2;
+        }
+      `}</style>
     </div>
   );
 };
