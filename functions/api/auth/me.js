@@ -50,6 +50,10 @@ export async function onRequestGet({ request, env }) {
         return new Response(JSON.stringify(payload), { headers: { "Content-Type": "application/json" } });
 
     } catch (err) {
-        return new Response(JSON.stringify({ error: "Auth failed" }), { status: 401 });
+        return new Response(JSON.stringify({
+            error: "Auth failed",
+            details: err.message,
+            stack: err.stack
+        }), { status: 401 });
     }
 }
