@@ -161,9 +161,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
     5. PERSISTENT MEMORY: Facts: ${userMemory.facts?.join(', ') || 'None'}. Last Topic: ${userMemory.lastTopic}.`;
 
     try {
+      const token = localStorage.getItem('auth_token');
       const res = await fetch('/api/chat/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
         body: JSON.stringify({
           message: text,
           chatId: persona.id

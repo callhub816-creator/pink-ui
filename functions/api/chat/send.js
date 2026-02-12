@@ -5,7 +5,16 @@ export async function onRequestPost({ request, env }) {
     // 1. 🔒 AUTH CHECK
     const cookieHeader = request.headers.get("Cookie") || "";
     const cookies = Object.fromEntries(cookieHeader.split("; ").map(c => c.split("=")));
-    const token = cookies["auth_token"];
+    let token = cookies["auth_token"];
+
+    // Fallback: Authorization Header
+    if (!token) {
+        const authHeader = request.headers.get("Authorization");
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
+    }
+
     if (!token) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
 
     let userId;
