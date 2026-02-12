@@ -74,11 +74,6 @@ export async function onRequestPost({ request, env }) {
         }
 
         // 6. 💾 ATOMIC UPDATE (SQL-Level Increment + Mark Processed)
-        // Using json_patch logic: Update hearts = hearts + X
-        // SQLite/D1 does not natively support json_set with arithmetic easily in standard update without full replace if old value is unknown in same statement.
-        // BUT we can use: UPDATE users SET profile_data = json_patch(profile_data, json_object('hearts', json_extract(profile_data, '$.hearts') + ?))
-        // NOTE: D1's SQLite version supports json_patch.
-
         await env.DB.batch([
             env.DB.prepare(`
                 UPDATE users 
@@ -101,7 +96,6 @@ export async function onRequestPost({ request, env }) {
         // 📝 LOG CRITICAL ERROR
         if (userId) {
             const logId = crypto.randomUUID();
-            // Best effort logging
             try {
                 await env.DB.prepare("INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)").bind(logId, userId, 'payment_error_catch', JSON.stringify({ error: err.message }), new Date().toISOString()).run();
             } catch (e) { }

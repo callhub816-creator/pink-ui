@@ -247,7 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       // 1. Create Order on Backend
-      const orderResponse = await fetch('/create-order', {
+      const orderResponse = await fetch('/api/payment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: amount * 100 }) // Razorpay expects paise
@@ -286,7 +286,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         handler: async function (response: any) {
           // 3. Verify Payment on Backend
           try {
-            const verifyRes = await fetch('/verify-payment', {
+            const verifyRes = await fetch('/api/payment/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
