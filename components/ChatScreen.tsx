@@ -161,39 +161,49 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
     5. PERSISTENT MEMORY: Facts: ${userMemory.facts?.join(', ') || 'None'}. Last Topic: ${userMemory.lastTopic}.`;
 
     try {
-      const res = await fetch('/chat', {
+      const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
-          systemPrompt: memoryHeader + "\n" + (PERSONA_PROMPTS[persona.name] || persona.basePrompt) + "\n" + NAME_AGNOSTIC_NOTE + "\n" + QUALITY_BOOSTER + "\n" + HEARTS_SYSTEM_MESSAGE + `\nIntent: ${intent}\nSummary: ${personaSummary}`,
-          history: messages.slice(-10).map(m => ({ role: m.sender === 'user' ? 'user' : 'model', text: m.text })),
-          userMode: 'FREE'
+          chatId: persona.id
         })
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        throw new Error(data.error || data.details?.message || "Server Error");
+        const errorText = await res.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          throw new Error(`Server Error (${res.status}): ${errorText.substring(0, 100)}`);
+        }
+
+        if (errorData.action === 'open_shop') throw new Error('INSUFFICIENT_HEARTS');
+        throw new Error(errorData.error || errorData.detail || "Server Error");
       }
 
+      const data = await res.json();
+
+      // Backend returns { messages: [...] }. Last one is AI.
+      const aiMsg = data.messages[data.messages.length - 1];
+      if (!aiMsg || aiMsg.role !== 'model') {
+        throw new Error("Invalid backend response");
+      }
+      const aiText = aiMsg.content || aiMsg.body || aiMsg.text;
+
       // --- HUMAN TYPING SIMULATION ---
-      // 1. Calculate thinking time (1.5s to 3s)
       const thinkingTime = 1500 + Math.random() * 1000;
       await new Promise(resolve => setTimeout(resolve, thinkingTime));
 
-      // 2. Calculate typing time based on length (~30 characters per second)
       const typingSpeed = 30;
-      const typingTime = (data.text.length / typingSpeed) * 1000;
-
-      // Delay for typing (capped at 12 seconds so user doesn't wait forever)
+      const typingTime = (aiText.length / typingSpeed) * 1000;
       await new Promise(resolve => setTimeout(resolve, Math.min(typingTime, 12000)));
 
       const modelMsg: Message = {
-        id: (Date.now() + 1).toString(),
+        id: aiMsg.id || (Date.now() + 1).toString(),
         sender: 'model',
-        text: data.text,
+        text: aiText,
         timestamp: new Date()
       };
 
@@ -210,7 +220,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         sender: 'model',
-        text: `⚠️ ERROR: ${err.message}. (Check Cloudflare Environment Variables if this says API Key hidden)`,
+        text: `⚠️ ERROR: ${err.message}`,
         timestamp: new Date(),
         isError: true
       }]);
