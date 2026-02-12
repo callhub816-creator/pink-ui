@@ -58,10 +58,17 @@ export const useChat = ({ chatId, userId }: UseChatProps) => {
             });
 
             if (!res.ok) {
-                const errorData = await res.json();
-                setIsTyping(false); // STOP TYPING (Error)
+                const errorText = await res.text();
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch (e) {
+                    throw new Error(`Server Error (${res.status}): ${errorText.substring(0, 100)}`);
+                }
+
+                setIsTyping(false);
                 if (errorData.action === 'open_shop') throw new Error('INSUFFICIENT_HEARTS');
-                throw new Error(errorData.error);
+                throw new Error(errorData.error || errorData.detail || 'Unknown Server Error');
             }
 
             // Success
