@@ -261,9 +261,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
         <div className="flex items-center gap-3">
           <WalletWidget isDarkMode={isDarkMode} onOpenShop={onOpenShop} />
           <button
-            onClick={() => { }} // Disabled as requested
-            className="p-2.5 rounded-full bg-pink-100/50 text-pink-400 cursor-not-allowed border border-pink-200"
-            title="Premium Connection Required"
+            onClick={onStartCall}
+            className={`p-2.5 rounded-full transition-all active:scale-95 border ${isDarkMode
+                ? 'bg-white/10 text-pink-400 border-white/20 hover:bg-white/20'
+                : 'bg-pink-50 text-pink-500 border-pink-200 hover:bg-pink-100 shadow-sm'
+              }`}
           >
             <Phone size={20} />
           </button>
