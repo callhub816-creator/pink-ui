@@ -10,7 +10,9 @@ export async function onRequestGet({ request, params, env }) {
     let userId;
     try {
         const parts = token.split(".");
-        const payload = JSON.parse(atob(parts[1]));
+        if (parts.length !== 2) throw new Error("Invalid token format");
+        const payloadStr = atob(parts[0]);
+        const payload = JSON.parse(payloadStr);
         userId = payload.id;
     } catch (e) {
         return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401 });

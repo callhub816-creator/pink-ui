@@ -20,11 +20,18 @@ export async function onRequestPost({ request, env }) {
     let userId;
     try {
         const parts = token.split(".");
-        const payload = JSON.parse(atob(parts[1]));
-        if (payload.exp < Date.now()) throw new Error("Expired");
+        if (parts.length !== 2) throw new Error("Invalid token format");
+
+        const payloadB64 = parts[0];
+        const payloadStr = atob(payloadB64);
+        const payload = JSON.parse(payloadStr);
+
+        if (payload.exp < Date.now()) {
+            return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+        }
         userId = payload.id;
     } catch (e) {
-        return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+        return new Response(JSON.stringify({ error: "Session expired", details: e.message }), { status: 401 });
     }
 
     // 2. 🛡️ INPUT VALIDATION (Strict)
