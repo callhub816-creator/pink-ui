@@ -189,12 +189,20 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
 
       const data = await res.json();
 
-      // Backend returns { messages: [...] }. Last one is AI.
-      const aiMsg = data.messages[data.messages.length - 1];
-      if (!aiMsg || aiMsg.role !== 'model') {
-        throw new Error("Invalid backend response");
+      // Backend returns either { messages: [...] } or { aiMessage: { ... } }
+      let aiMsgData = null;
+      if (data.messages && Array.isArray(data.messages)) {
+        aiMsgData = data.messages[data.messages.length - 1];
+      } else if (data.aiMessage) {
+        aiMsgData = data.aiMessage;
       }
-      const aiText = aiMsg.content || aiMsg.body || aiMsg.text;
+
+      if (!aiMsgData) {
+        throw new Error("Invalid backend response: No AI message found");
+      }
+
+      const aiText = aiMsgData.body || aiMsgData.content || aiMsgData.text;
+      if (!aiText) throw new Error("Invalid backend response: AI message text is empty");
 
       // --- HUMAN TYPING SIMULATION ---
       const thinkingTime = 1500 + Math.random() * 1000;
@@ -205,7 +213,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
       await new Promise(resolve => setTimeout(resolve, Math.min(typingTime, 12000)));
 
       const modelMsg: Message = {
-        id: aiMsg.id || (Date.now() + 1).toString(),
+        id: aiMsgData.id || (Date.now() + 1).toString(),
         sender: 'model',
         text: aiText,
         timestamp: new Date()
