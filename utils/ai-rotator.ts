@@ -1,38 +1,40 @@
-/**
- * ai-rotator.ts
- * Frontend Bypass: Gemini logic is now handled by Cloudflare Pages Functions (/chat).
- * This file remains for backward compatibility with component hooks but no longer requires local keys.
- */
-
 interface KeyState {
     value: string;
     index: number;
 }
 
 class KeyRotator {
-    private keys: string[] = ["BACKEND_MANAGED"];
+    private keys: string[] = [];
     private currentKeyIndex: number = 0;
 
     constructor() {
-        // Frontend key collection is deprecated. 
-        // Gemini API keys must be set as Cloudflare Pages environment secrets (GEMINI_API_KEY).
-        console.log(`[KeyRotator:Gemini] System stabilized. Using backend-managed auth.`);
+        // @ts-ignore
+        const rawKeys = import.meta.env.VITE_GEMINI_API_KEY || "";
+        this.keys = rawKeys.split(",").map((k: string) => k.trim()).filter((k: string) => k);
+
+        if (this.keys.length > 0) {
+            console.log(`[KeyRotator:Gemini] Initialized with ${this.keys.length} keys.`);
+        } else {
+            console.warn(`[KeyRotator:Gemini] No keys found in VITE_GEMINI_API_KEY. Voice calls will fail.`);
+        }
     }
 
     public getKey(): KeyState | null {
-        // Return a dummy key so frontend validation passes, but actual calls go to /chat
+        if (this.keys.length === 0) return null;
         return {
-            value: "BACKEND_MANAGED",
-            index: 0
+            value: this.keys[this.currentKeyIndex],
+            index: this.currentKeyIndex
         };
     }
 
     public rotate(reason: string): void {
-        console.log(`[KeyRotator:Gemini] Backend rotation signal received: ${reason}`);
+        if (this.keys.length <= 1) return;
+        this.currentKeyIndex = (this.currentKeyIndex + 1) % this.keys.length;
+        console.log(`[KeyRotator:Gemini] Rotated to key index ${this.currentKeyIndex}. Reason: ${reason}`);
     }
 
     public getAvailableKeysCount(): number {
-        return 1;
+        return this.keys.length;
     }
 }
 
