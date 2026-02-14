@@ -77,7 +77,9 @@ export const useChat = ({ chatId, userId }: UseChatProps) => {
 
                 setIsTyping(false);
                 if (errorData.action === 'open_shop') throw new Error('INSUFFICIENT_HEARTS');
-                throw new Error(errorData.error || errorData.detail || 'Unknown Server Error');
+                const fullError = errorData.error || errorData.detail || errorData.details || 'Unknown Server Error';
+                console.error('Server Auth Error:', errorData);
+                throw new Error(fullError);
             }
 
             // Success
