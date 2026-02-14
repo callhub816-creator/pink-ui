@@ -16,7 +16,12 @@ export const useChat = ({ chatId, userId }: UseChatProps) => {
     // 1. Fetch Messages (GET)
     const fetchMessages = useCallback(async () => {
         try {
-            const res = await fetch(`/api/chat?chatId=${chatId}`);
+            const token = localStorage.getItem('auth_token');
+            const res = await fetch(`/api/chat?chatId=${chatId}`, {
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
+            });
             if (!res.ok) throw new Error('Failed to load chat');
             const data = await res.json();
             setMessages(data.messages || []);
@@ -51,9 +56,13 @@ export const useChat = ({ chatId, userId }: UseChatProps) => {
             };
             setMessages(prev => [...prev, optimisticMsg]);
 
+            const token = localStorage.getItem('auth_token');
             const res = await fetch('/api/chat/send', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({ message: body, chatId, systemPrompt: "You are a loving girlfriend." })
             });
 
