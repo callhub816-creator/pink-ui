@@ -1,28 +1,60 @@
 export async function onRequestPost({ request, env }) {
     if (!env.DB) return new Response(JSON.stringify({ error: "DB missing" }), { status: 500 });
 
-    // 1. 🔒 AUTH CHECK (JWT)
+    // 1. 🔒 AUTH CHECK (Hardened)
     const cookieHeader = request.headers.get("Cookie") || "";
-    const cookies = Object.fromEntries(cookieHeader.split("; ").map(c => c.split("=")));
-    const token = cookies["auth_token"];
-    if (!token) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    const authHeader = request.headers.get("Authorization") || "";
+
+    let token = null;
+    if (authHeader.startsWith("Bearer ")) {
+        token = authHeader.substring(7);
+    } else {
+        const cookies = Object.fromEntries(cookieHeader.split(";").map(c => c.trim().split("=")));
+        token = cookies["auth_token"];
+    }
+
+    if (!token) return new Response(JSON.stringify({ error: "Unauthorized (Missing Token)" }), { status: 401 });
 
     let userId;
     try {
-        const [payloadB64, signatureB64] = token.split(".");
-        const payloadStr = atob(payloadB64);
+        const parts = token.split(".");
+        const isStandardJWT = parts.length === 3;
+        const payloadB64 = isStandardJWT ? parts[1] : parts[0];
+        const signatureB64 = isStandardJWT ? parts[2] : parts[1];
+
+        if (!payloadB64 || !signatureB64) throw new Error("Malformatted token parts");
+
+        const decoder = new TextDecoder();
+        const payloadUint8 = new Uint8Array(atob(payloadB64).split("").map(c => c.charCodeAt(0)));
+        const payloadStr = decoder.decode(payloadUint8);
         const payload = JSON.parse(payloadStr);
 
+        // Check expiration
+        if (payload.exp < Date.now()) {
+            return new Response(JSON.stringify({ error: "Session expired", expiredAt: payload.exp, now: Date.now() }), { status: 401 });
+        }
+
+        // Verify Signature
         const encoder = new TextEncoder();
         const secret = env.JWT_SECRET || "default_hush_hush_secret";
-        const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+        const key = await crypto.subtle.importKey(
+            "raw",
+            encoder.encode(secret),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["verify"]
+        );
+
         const signature = new Uint8Array(atob(signatureB64).split("").map(c => c.charCodeAt(0)));
         const isValid = await crypto.subtle.verify("HMAC", key, signature, encoder.encode(payloadStr));
 
-        if (!isValid || payload.exp < Date.now()) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401 });
+        if (!isValid) {
+            return new Response(JSON.stringify({ error: "Invalid session (Signature Match Failed)" }), { status: 401 });
+        }
+
         userId = payload.id;
     } catch (e) {
-        return new Response(JSON.stringify({ error: "Auth failed" }), { status: 401 });
+        return new Response(JSON.stringify({ error: "Auth verification failed", details: e.message }), { status: 401 });
     }
 
     try {

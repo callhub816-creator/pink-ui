@@ -247,7 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       // 1. Create Order on Backend
-      const orderResponse = await fetch('/api/payment/create', {
+      const orderResponse = await authFetch('/api/payment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: amount * 100 }) // Razorpay expects paise
@@ -286,7 +286,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         handler: async function (response: any) {
           // 3. Verify Payment on Backend
           try {
-            const verifyRes = await fetch('/api/payment/verify', {
+            const verifyRes = await authFetch('/api/payment/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -311,7 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               });
               showNotification(`Payment Successful! ${description} added.`, 'success');
             } else {
-              showNotification('Payment verification failed.', 'error');
+              showNotification(verifyRes.error || 'Payment verification failed.', 'error');
             }
           } catch (error) {
             console.error('Verify Error:', error);
@@ -336,16 +336,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     } catch (error: any) {
       console.error('Payment Error:', error);
-
-      // User-friendly error message
-      let userMessage = error.message || 'Payment initiation failed';
-
-      // If it's a credentials error, show helpful message
-      if (userMessage.includes('credentials') || userMessage.includes('misconfigured') || userMessage.includes('Server error: 500')) {
-        userMessage = '⚠️ Payment system is being set up. Please try again later or contact support.';
-      }
-
-      showNotification(userMessage, 'error');
+      showNotification(error.message || 'Payment initiation failed', 'error');
     }
   };
 
