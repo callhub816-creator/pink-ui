@@ -422,33 +422,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const claimDailyBonus = async () => {
-    const today = new Date().toDateString();
-    if (profile.lastDailyBonusClaim === today) {
-      showNotification("You've already claimed your daily bonus! Come back tomorrow. ✨", 'info');
+    try {
+      const res = await authFetch('/api/auth/bonus', { method: 'POST' });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showNotification(data.error || "Failed to claim bonus", 'info');
+        return false;
+      }
+
+      if (data.success && data.profile) {
+        setProfile(data.profile);
+        storage.saveProfile(data.profile);
+        showNotification(`Daily bonus claimed! +10 Hearts added. ❤️`, 'success');
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Bonus Error:", err);
+      showNotification("Could not claim bonus. Try again later.", 'error');
       return false;
     }
-
-    const bonusAmount = 10;
-    const newRecord = {
-      id: Date.now().toString(),
-      type: 'bonus' as const,
-      amount: bonusAmount,
-      label: 'Daily Login Bonus',
-      timestamp: new Date().toISOString()
-    };
-
-    const updated = {
-      ...profile,
-      hearts: (profile.hearts || 0) + bonusAmount,
-      lastDailyBonusClaim: today,
-      earningsHistory: [newRecord, ...(profile.earningsHistory || [])].slice(0, 50)
-    };
-
-    setProfile(updated);
-    storage.saveProfile(updated);
-    await syncProfile(updated);
-    showNotification(`Daily bonus claimed! +${bonusAmount} Hearts added to your wallet. ❤️`, 'success');
-    return true;
   };
 
   return (
