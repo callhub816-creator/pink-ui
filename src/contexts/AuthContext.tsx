@@ -262,7 +262,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           errorData = JSON.parse(errorText);
           console.error("Payment Server Error Data:", errorData);
-          errorMessage = errorData.detail?.description || errorData.error || errorData.detail || errorMessage;
+          // Extract specific Razorpay error message if available
+          const specificError = errorData.detail?.error?.description || errorData.detail?.description || errorData.error;
+          errorMessage = specificError || errorMessage;
         } catch {
           errorMessage = errorText || `Server returned ${orderResponse.status}`;
         }
