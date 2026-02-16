@@ -27,10 +27,11 @@ interface Message {
   text: string;
   timestamp: Date;
   isError?: boolean;
+  audioUrl?: string;
 }
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, isDarkMode, onOpenShop }) => {
-  const { profile, user } = useAuth();
+  const { profile, user, spendHearts } = useAuth();
   const { showNotification } = useNotification();
   const { isMessageLimitReached, isNightTimeLocked } = useGating();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -39,29 +40,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
   const [isGiftOpen, setIsGiftOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Load history + Handle "Attention" trigger if away > 24h
+  // ... (useEffect for history loading same as before)
   useEffect(() => {
     const saved = storage.getMessages(persona.id);
     const msgs = saved.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
-
-    const lastActive = new Date(profile.lastActive || Date.now()).getTime();
-    const diff = Date.now() - lastActive;
-
-    // Trigger specific "kahan the" message if away > 24h (per user request)
-    if (diff > 24 * 60 * 60 * 1000 && persona.name.toLowerCase().includes('ayesha')) {
-      const alreadySent = msgs.some(m => m.text.includes("Kahan gayab ho gaye the"));
-      if (!alreadySent) {
-        const awayMsg: Message = {
-          id: 'away-' + Date.now(),
-          sender: 'model',
-          text: "Kal tum online nahi the... I missed you. Kahan gayab ho gaye the? 🥺",
-          timestamp: new Date()
-        };
-        msgs.push(awayMsg);
-        storage.saveMessage(persona.id, { ...awayMsg, timestamp: awayMsg.timestamp.toISOString() });
-      }
-    }
-
     setMessages(msgs);
   }, [persona.id]);
 
@@ -69,35 +51,30 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isTyping]);
 
-  const handleSend = async (resendText?: string) => {
+  const handleSend = async (resendText?: string, isVoice?: boolean) => {
     const text = resendText || inputText;
     if (!text.trim() || isTyping) return;
 
     // CHECK GATING
     if (isMessageLimitReached()) {
-      const limitMsg: Message = {
-        id: 'limit-hit-' + Date.now(),
-        sender: 'model',
-        text: `She wants to continue... but your daily free messages are up 💔. Unlock unlimited chat for 24h for just ₹49!`,
-        timestamp: new Date(),
-        isError: true
-      };
       showNotification("Daily message limit reached! Unlock unlimited chat to continue.", 'info');
-      setMessages(prev => [...prev, limitMsg]);
       return;
     }
 
     if (isNightTimeLocked()) {
-      const nightMsg: Message = {
-        id: 'night-hit-' + Date.now(),
-        sender: 'model',
-        text: `It's late, and she's resting... 🌙 Only premium companions can talk late at night. Unlock the Starter Pass to wake her up!`,
-        timestamp: new Date(),
-        isError: true
-      };
       showNotification("Night session locked! Starter Pass required to talk now.", 'info');
-      setMessages(prev => [...prev, nightMsg]);
       return;
+    }
+
+    // SPEND HEART LOGIC
+    const heartCost = isVoice ? 3 : 1;
+    if (profile.subscription === 'free') {
+      const success = spendHearts(heartCost);
+      if (!success) {
+        showNotification(`Not enough Hearts! Voice notes cost ${heartCost} hearts. ❤️`, 'hearts');
+        onOpenShop();
+        return;
+      }
     }
 
     const newUserMsg: Message = {
@@ -107,58 +84,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
       timestamp: new Date()
     };
 
-    // SPEND HEART LOGIC (India Market Strategy)
-    // Spend 1 heart if free, unless they have unlimted via Starter/Core (handled in Auth)
-    if (profile.subscription === 'free') {
-      const hasBalance = storage.spendHearts(1);
-      if (!hasBalance) {
-        const noHeartMsg: Message = {
-          id: 'no-hearts-' + Date.now(),
-          sender: 'model',
-          text: `Suno na? She's waiting for your message... par tumhare hearts khatam ho gaye hain. 💔 refill kar lo phir baatein karte hain? ✨`,
-          timestamp: new Date(),
-          isError: true
-        };
-        showNotification("Not enough Hearts! Refill your wallet to keep talking. ❤️", 'hearts');
-        setMessages(prev => [...prev, noHeartMsg]);
-        return;
-      }
-    }
-
-    // Always add user message to state and storage (Fixed: Now shows Gifts in chat)
     setMessages(prev => [...prev, newUserMsg]);
     storage.saveMessage(persona.id, { ...newUserMsg, timestamp: newUserMsg.timestamp.toISOString() });
-
-    // Only clear input if we sent what was in the input box
-    if (!resendText) {
-      setInputText('');
-    }
-
+    if (!resendText) setInputText('');
     setIsTyping(true);
-    const intent = detectIntent(text);
-    const userMemory = storage.getMemory(persona.id);
-    const personaSummary = storage.getSummary(persona.id);
-
-    // AUTH NAME SYNC: Final Boss Level Override
-    const rawUserInfo = localStorage.getItem('callhub_user_info');
-    const userInfo = rawUserInfo ? JSON.parse(rawUserInfo) : { age: '24', lookingFor: 'ROMANCE' };
-
-    // We strictly use the Account Display Name or Custom Nickname if it exists
-    const accountName = profile.nickname || user?.displayName || user?.username || 'User';
-    userInfo.name = accountName;
-
-    const goalInstruction = userInfo.lookingFor === 'HEALING'
-      ? "Be supportive, calm, and focus on emotional healing. User is looking for comfort."
-      : userInfo.lookingFor === 'FRIENDSHIP'
-        ? "Be a casual, fun friend. Don't be too romantic. User is looking for a connection."
-        : "Be flirtatious, deeply caring, and focus on building a romantic bond.";
-
-    const memoryHeader = `CRITICAL SYSTEM INSTRUCTION: 
-    1. The User's name is "${userInfo.name}". 
-    2. NEVER use the word "User" as a name. 
-    3. Always address them as "${userInfo.name}" or using sweet terms like "jaan", "dear", "sweetheart" if appropriate for romance.
-    4. USER PROFILE: Name: ${userInfo.name}, Age: ${userInfo.age}, Goal: ${userInfo.lookingFor}. ${goalInstruction}
-    5. PERSISTENT MEMORY: Facts: ${userMemory.facts?.join(', ') || 'None'}. Last Topic: ${userMemory.lastTopic}.`;
 
     try {
       const token = localStorage.getItem('auth_token');
@@ -170,72 +99,31 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
         },
         body: JSON.stringify({
           message: text,
-          chatId: persona.id
+          chatId: persona.id,
+          isVoiceNote: isVoice
         })
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          throw new Error(`Server Error (${res.status}): ${errorText.substring(0, 100)}`);
-        }
-
-        if (errorData.action === 'open_shop') throw new Error('INSUFFICIENT_HEARTS');
-        throw new Error(errorData.error || errorData.detail || "Server Error");
-      }
+      if (!res.ok) throw new Error("Failed to send message");
 
       const data = await res.json();
+      const aiMsgData = data.aiMessage;
 
-      // Backend returns either { messages: [...] } or { aiMessage: { ... } }
-      let aiMsgData = null;
-      if (data.messages && Array.isArray(data.messages)) {
-        aiMsgData = data.messages[data.messages.length - 1];
-      } else if (data.aiMessage) {
-        aiMsgData = data.aiMessage;
-      }
-
-      if (!aiMsgData) {
-        throw new Error("Invalid backend response: No AI message found");
-      }
-
-      const aiText = aiMsgData.body || aiMsgData.content || aiMsgData.text;
-      if (!aiText) throw new Error("Invalid backend response: AI message text is empty");
-
-      // --- HUMAN TYPING SIMULATION ---
-      const thinkingTime = 1500 + Math.random() * 1000;
-      await new Promise(resolve => setTimeout(resolve, thinkingTime));
-
-      const typingSpeed = 30;
-      const typingTime = (aiText.length / typingSpeed) * 1000;
-      await new Promise(resolve => setTimeout(resolve, Math.min(typingTime, 12000)));
+      if (!aiMsgData) throw new Error("Invalid response");
 
       const modelMsg: Message = {
-        id: aiMsgData.id || (Date.now() + 1).toString(),
+        id: aiMsgData.id || Date.now().toString(),
         sender: 'model',
-        text: aiText,
-        timestamp: new Date()
+        text: aiMsgData.body,
+        timestamp: new Date(),
+        audioUrl: aiMsgData.audioUrl
       };
 
       setMessages(prev => [...prev, modelMsg]);
       storage.saveMessage(persona.id, { ...modelMsg, timestamp: modelMsg.timestamp.toISOString() });
 
-      storage.saveMemory(persona.id, {
-        lastMood: 'Connected',
-        lastTopic: text.substring(0, 30)
-      });
-
     } catch (err: any) {
       console.error("Chat Error:", err);
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        sender: 'model',
-        text: `⚠️ ERROR: ${err.message}`,
-        timestamp: new Date(),
-        isError: true
-      }]);
     } finally {
       setIsTyping(false);
     }
@@ -263,8 +151,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
           <button
             onClick={onStartCall}
             className={`p-2.5 rounded-full transition-all active:scale-95 border ${isDarkMode
-                ? 'bg-white/10 text-pink-400 border-white/20 hover:bg-white/20'
-                : 'bg-pink-50 text-pink-500 border-pink-200 hover:bg-pink-100 shadow-sm'
+              ? 'bg-white/10 text-pink-400 border-white/20 hover:bg-white/20'
+              : 'bg-pink-50 text-pink-500 border-pink-200 hover:bg-pink-100 shadow-sm'
               }`}
           >
             <Phone size={20} />
@@ -283,6 +171,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
                 : isDarkMode ? 'bg-white/10 text-white rounded-bl-none' : 'bg-white text-[#4A2040] rounded-bl-none border border-pink-50'
               }`}>
               {msg.text}
+              {msg.audioUrl && (
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  <audio controls src={msg.audioUrl} className="h-8 w-full max-w-[200px]" />
+                </div>
+              )}
             </div>
             <span className="text-[9px] opacity-40 mt-1 px-1">
               {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -349,6 +242,21 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
               }}
             />
           </div>
+
+          {/* Action Button: Voice Note */}
+          <button
+            onClick={() => handleSend(inputText, true)}
+            disabled={!inputText.trim() || isTyping}
+            className={`relative p-3 rounded-2xl transition-all duration-300 active:scale-90 ${isDarkMode
+              ? 'bg-white/5 text-purple-400 border border-white/10'
+              : 'bg-white text-purple-500 border border-purple-100'
+              } ${(!inputText.trim() || isTyping) ? 'opacity-50' : 'hover:scale-110'}`}
+          >
+            <Mic size={22} strokeWidth={2.5} />
+            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse whitespace-nowrap">
+              3 ❤️ (70% OFF)
+            </div>
+          </button>
 
           {/* Action Button: Send */}
           <button

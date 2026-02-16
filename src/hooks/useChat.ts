@@ -41,7 +41,7 @@ export const useChat = ({ chatId, userId }: UseChatProps) => {
     }, [fetchMessages]);
 
     // 2. Send Message (POST)
-    const sendMessage = useCallback(async (body: string, replyTo?: string, langHint?: string) => {
+    const sendMessage = useCallback(async (body: string, replyTo?: string, isVoiceNote?: boolean) => {
         try {
             setIsTyping(true); // START TYPING
             const tempId = Date.now().toString();
@@ -63,7 +63,7 @@ export const useChat = ({ chatId, userId }: UseChatProps) => {
                     'Content-Type': 'application/json',
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
-                body: JSON.stringify({ message: body, chatId, systemPrompt: "You are a loving girlfriend." })
+                body: JSON.stringify({ message: body, chatId, isVoiceNote })
             });
 
             if (!res.ok) {

@@ -19,6 +19,7 @@ export interface Message {
     avatar_url?: string;
   };
   repliedMessage?: Message | null;
+  audioUrl?: string;
 }
 
 export interface ChatUser {
