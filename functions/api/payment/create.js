@@ -32,7 +32,7 @@ export async function onRequestPost({ request, env }) {
 
         if (!razorpayRes.ok) {
             return new Response(JSON.stringify({
-                error: "Razorpay API Error",
+                error: `Razorpay API Error (${razorpayRes.status})`,
                 detail: orderData
             }), { status: razorpayRes.status, headers: { "Content-Type": "application/json" } });
         }
