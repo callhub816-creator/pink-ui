@@ -3,13 +3,13 @@ export async function onRequestPost({ request, env }) {
         const body = await request.json();
         const amount = body.amount;
 
-        const keyId = env.RAZORPAY_KEY_ID;
-        const keySecret = env.RAZORPAY_KEY_SECRET;
+        const keyId = (env.RAZORPAY_KEY_ID || "").trim();
+        const keySecret = (env.RAZORPAY_KEY_SECRET || "").trim();
 
         if (!keyId || !keySecret) {
             return new Response(JSON.stringify({
                 error: "Razorpay credentials missing",
-                detail: "Ensure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are set in Cloudflare Environment Variables"
+                detail: "Check Cloudflare Environment Variables for RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET"
             }), { status: 500, headers: { "Content-Type": "application/json" } });
         }
 
@@ -31,15 +31,17 @@ export async function onRequestPost({ request, env }) {
         const orderData = await razorpayRes.json();
 
         if (!razorpayRes.ok) {
+            // Razorpay errors are usually orderData.error.description
+            const specificDesc = orderData.error?.description || JSON.stringify(orderData);
             return new Response(JSON.stringify({
-                error: `Razorpay API Error (${razorpayRes.status})`,
+                error: `Razorpay API Error (${razorpayRes.status}): ${specificDesc}`,
                 detail: orderData
             }), { status: razorpayRes.status, headers: { "Content-Type": "application/json" } });
         }
 
         return new Response(JSON.stringify({
             ...orderData,
-            key_id: keyId // Send key to frontend dynamically
+            key_id: keyId
         }), {
             headers: { "Content-Type": "application/json" }
         });
