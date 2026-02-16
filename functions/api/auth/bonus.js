@@ -20,7 +20,7 @@ export async function onRequestPost({ request, env }) {
         const payloadStr = atob(payloadB64);
         const payload = JSON.parse(payloadStr);
 
-        // Verify Signature (Simple check same as other endpoints)
+        // Verify Signature
         const encoder = new TextEncoder();
         const secret = env.JWT_SECRET || "default_hush_hush_secret";
         const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
@@ -30,7 +30,8 @@ export async function onRequestPost({ request, env }) {
         if (!isValid || payload.exp < Date.now()) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401 });
 
         const userId = payload.id;
-        const today = new Date().toDateString();
+        const now = Date.now();
+        const COOLDOWN_24H = 24 * 60 * 60 * 1000;
 
         // 2. Fetch User Profile
         const user = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(userId).first();
@@ -38,9 +39,19 @@ export async function onRequestPost({ request, env }) {
 
         const profile = JSON.parse(user.profile_data || "{}");
 
-        // 3. Check if already claimed
-        if (profile.lastDailyBonusClaim === today) {
-            return new Response(JSON.stringify({ error: "Already claimed today" }), { status: 400 });
+        // 3. 🕒 STRICT 24H CHECK (Rolling Window)
+        const lastClaim = parseInt(profile.lastDailyBonusClaimTs || 0);
+        const timeElapsed = now - lastClaim;
+
+        if (timeElapsed < COOLDOWN_24H) {
+            const timeLeftMs = COOLDOWN_24H - timeElapsed;
+            const hoursLeft = Math.floor(timeLeftMs / (60 * 60 * 1000));
+            const minsLeft = Math.floor((timeLeftMs % (60 * 60 * 1000)) / (60 * 1000));
+
+            return new Response(JSON.stringify({
+                error: `Next bonus available in ${hoursLeft}h ${minsLeft}m! ✨`,
+                nextAvailableTs: lastClaim + COOLDOWN_24H
+            }), { status: 400 });
         }
 
         // 4. Update Profile
@@ -56,7 +67,8 @@ export async function onRequestPost({ request, env }) {
         const updatedProfile = {
             ...profile,
             hearts: (parseInt(profile.hearts) || 0) + bonusAmount,
-            lastDailyBonusClaim: today,
+            lastDailyBonusClaimTs: now, // Store as timestamp
+            lastDailyBonusClaim: new Date().toDateString(), // Legacy support
             earningsHistory: [newRecord, ...(profile.earningsHistory || [])].slice(0, 50)
         };
 
@@ -64,10 +76,12 @@ export async function onRequestPost({ request, env }) {
             .bind(JSON.stringify(updatedProfile), userId)
             .run();
 
-        // 5. Audit Log
-        await env.DB.prepare("INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)")
-            .bind(crypto.randomUUID(), userId, 'claim_bonus', JSON.stringify({ amount: bonusAmount }), new Date().toISOString())
-            .run();
+        // 5. Audit Log (Optional but good)
+        try {
+            await env.DB.prepare("INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)")
+                .bind(crypto.randomUUID(), userId, 'claim_bonus', JSON.stringify({ amount: bonusAmount }), new Date().toISOString())
+                .run();
+        } catch (e) { }
 
         return new Response(JSON.stringify({ success: true, profile: updatedProfile }), { headers: { "Content-Type": "application/json" } });
 
