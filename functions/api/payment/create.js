@@ -24,7 +24,7 @@ export async function onRequestPost({ request, env }) {
             body: JSON.stringify({
                 amount: amount || 9900,
                 currency: "INR",
-                payment_capture: 1
+                receipt: `order_rcptid_${Date.now()}`
             })
         });
 

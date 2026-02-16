@@ -257,10 +257,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!orderResponse.ok) {
         const errorText = await orderResponse.text();
         let errorMessage = 'Payment server error';
+        let errorData = null;
 
         try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorData.detail || errorMessage;
+          errorData = JSON.parse(errorText);
+          console.error("Payment Server Error Data:", errorData);
+          errorMessage = errorData.detail?.description || errorData.error || errorData.detail || errorMessage;
         } catch {
           errorMessage = errorText || `Server returned ${orderResponse.status}`;
         }
