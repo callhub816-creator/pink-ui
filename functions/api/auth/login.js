@@ -57,6 +57,15 @@ export async function onRequestPost({ request, env }) {
         const signature = await crypto.subtle.sign("HMAC", key, payloadUint8);
         const token = payloadB64 + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));
 
+        // 4. Audit Log (Login Success)
+        try {
+            await env.DB.prepare(
+                "INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)"
+            ).bind(crypto.randomUUID(), user.id, 'login', JSON.stringify({ ip: request.headers.get("cf-connecting-ip") || "unknown" }), new Date().toISOString()).run();
+        } catch (e) {
+            console.error("Audit log failed:", e);
+        }
+
         return new Response(JSON.stringify({
             success: true,
             token,

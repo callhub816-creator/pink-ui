@@ -42,11 +42,17 @@ export async function onRequestPost({ request, env }) {
         const passwordHash = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
         const passwordSalt = btoa(String.fromCharCode(...salt));
 
-        // 3. Insert into DB
+        // 3. Insert into DB (Batch: User + Audit Log)
         const userId = crypto.randomUUID();
-        await env.DB.prepare(
-            "INSERT INTO users (id, username, display_name, password_hash, password_salt, profile_data, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
-        ).bind(userId, username, displayName, passwordHash, passwordSalt, JSON.stringify(profileData || {}), new Date().toISOString()).run();
+        const nowIso = new Date().toISOString();
+        await env.DB.batch([
+            env.DB.prepare(
+                "INSERT INTO users (id, username, display_name, password_hash, password_salt, profile_data, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            ).bind(userId, username, displayName, passwordHash, passwordSalt, JSON.stringify(profileData || {}), nowIso),
+            env.DB.prepare(
+                "INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)"
+            ).bind(crypto.randomUUID(), userId, 'signup', JSON.stringify({ ip: request.headers.get("cf-connecting-ip") || "unknown" }), nowIso)
+        ]);
 
         // 4. Create Session Cookie (Login immediately after signup)
         const payload = JSON.stringify({ id: userId, username, displayName, exp: Date.now() + (30 * 86400000) }); // 30 Days
