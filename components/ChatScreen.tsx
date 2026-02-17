@@ -111,6 +111,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
 
       if (!aiMsgData) throw new Error("Invalid response");
 
+      // Handle TTS Error Display
+      if (aiMsgData.error) {
+        showNotification(aiMsgData.error, 'error');
+      }
+
       const modelMsg: Message = {
         id: aiMsgData.id || Date.now().toString(),
         sender: 'model',

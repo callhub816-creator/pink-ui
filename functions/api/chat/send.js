@@ -107,17 +107,18 @@ export async function onRequestPost({ request, env }) {
         ).bind(chatId).all();
         const historyContext = (history || []).reverse().map(m => ({ role: m.role, content: m.body }));
 
-        // 🏗️ DYNAMIC PERSONALITY & VOICE MAPPING
+        // 🏗️ DYNAMIC PERSONALITY & VOICE MAPPING (Match IDs from constants.ts)
         const personas = {
-            'ayesha': { name: 'Ayesha', style: 'bold, witty, playful, and energetic', voiceId: 'EXAVITQu4vr4xnSDxMaL' }, // Rachel (Sweet but bold)
-            'simran': { name: 'Simran', style: 'warm, expressive, calm, and reassuring', voiceId: 'Lcf78I6pS7IqB4467I6P' }, // Bella (Soft/Warm)
-            'kiara': { name: 'Kiara', style: 'high-energy, fast-paced, and spontaneous', voiceId: '21m00Tcm4TlvDq8ikWAM' }, // Rachel (Energetic)
-            'myra': { name: 'Myra', style: 'soft-spoken, relaxed, and thoughtful', voiceId: 'AZnzlk1XvdvUe3BnKn60' },  // Nicole (Gentle/Whisper)
-            'anjali': { name: 'Anjali', style: 'gentle, slow-paced, and minimalistic', voiceId: 'XrExE9yKIg1WjwdY3FvW' }, // Ellie (Young/Sweet)
-            'mitali': { name: 'Mitali', style: 'intellectual, structured, and topic-driven', voiceId: 'ThT5KcBe7VK6AsUv09Y3' } // Antoinette (Mature/British)
+            '1': { name: 'Ayesha', style: 'bold, witty, playful, and energetic', voiceId: 'EXAVITQu4vr4xnSDxMaL' }, // Rachel (Sweet but bold)
+            '2': { name: 'Simran', style: 'warm, expressive, calm, and reassuring', voiceId: 'Lcf78I6pS7IqB4467I6P' }, // Bella (Soft/Warm)
+            '3': { name: 'Kiara', style: 'high-energy, fast-paced, and spontaneous', voiceId: '21m00Tcm4TlvDq8ikWAM' }, // Rachel (Energetic)
+            '4': { name: 'Myra', style: 'soft-spoken, relaxed, and thoughtful', voiceId: 'AZnzlk1XvdvUe3BnKn60' },  // Nicole (Gentle/Whisper)
+            '5': { name: 'Anjali', style: 'gentle, slow-paced, and minimalistic', voiceId: 'XrExE9yKIg1WjwdY3FvW' }, // Ellie (Young/Sweet)
+            '6': { name: 'Mitali', style: 'intellectual, structured, and topic-driven', voiceId: 'ThT5KcBe7VK6AsUv09Y3' } // Antoinette (Mature/British)
         };
 
-        const activePersona = personas[chatId?.toLowerCase()] || { name: 'Jennifer', style: 'loving and cute', voiceId: 'EXAVITQu4vr4xnSDxMaL' };
+        const personaIdStr = String(chatId);
+        const activePersona = personas[personaIdStr] || { name: 'Jennifer', style: 'loving and cute', voiceId: 'EXAVITQu4vr4xnSDxMaL' };
 
         const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. Your response MUST BE UNDER 15 WORDS and very natural/intimate." : "";
         const SYSTEM_PROMPT = `You are ${activePersona.name}, a loving AI Girl. 
@@ -142,30 +143,41 @@ export async function onRequestPost({ request, env }) {
 
         // 🎙️ ELEVENLABS TTS (If Voice Note requested)
         let audioBase64 = null;
-        if (isVoiceNote && env.ELEVENLABS_API_KEY) {
-            try {
-                const voiceIdToUse = activePersona.voiceId || env.ELEVENLABS_VOICE_ID || "EXAVITQu4vr4xnSDxMaL";
-                const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceIdToUse}`, {
-                    method: "POST",
-                    headers: {
-                        "xi-api-key": env.ELEVENLABS_API_KEY,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        text: aiReply,
-                        model_id: "eleven_multilingual_v2",
-                        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-                    })
-                });
-                if (ttsRes.ok) {
-                    const audioBuffer = await ttsRes.arrayBuffer();
-                    const uint8 = new Uint8Array(audioBuffer);
-                    let binary = "";
-                    for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
-                    audioBase64 = `data:audio/mpeg;base64,${btoa(binary)}`;
+        let ttsError = null;
+
+        if (isVoiceNote) {
+            if (!env.ELEVENLABS_API_KEY) {
+                ttsError = "ElevenLabs API Key is missing in Environment Variables.";
+            } else {
+                try {
+                    const voiceIdToUse = activePersona.voiceId || "EXAVITQu4vr4xnSDxMaL";
+                    const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceIdToUse}`, {
+                        method: "POST",
+                        headers: {
+                            "xi-api-key": env.ELEVENLABS_API_KEY,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            text: aiReply,
+                            model_id: "eleven_multilingual_v2",
+                            voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+                        })
+                    });
+
+                    if (ttsRes.ok) {
+                        const audioBuffer = await ttsRes.arrayBuffer();
+                        const uint8 = new Uint8Array(audioBuffer);
+                        let binary = "";
+                        for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+                        audioBase64 = `data:audio/mpeg;base64,${btoa(binary)}`;
+                    } else {
+                        const errData = await ttsRes.json();
+                        ttsError = `ElevenLabs Error: ${errData.detail?.status || ttsRes.status} - ${errData.detail?.message || "Unknown error"}`;
+                    }
+                } catch (ttsErr) {
+                    console.error("TTS Failed:", ttsErr);
+                    ttsError = "TTS Connection Failed.";
                 }
-            } catch (ttsErr) {
-                console.error("TTS Failed:", ttsErr);
             }
         }
 
@@ -179,7 +191,13 @@ export async function onRequestPost({ request, env }) {
 
         return new Response(JSON.stringify({
             success: true,
-            aiMessage: { id: aiMsgId, body: aiReply, created_at: aiNowIso, audioUrl: audioBase64 }
+            aiMessage: {
+                id: aiMsgId,
+                body: aiReply,
+                created_at: aiNowIso,
+                audioUrl: audioBase64,
+                error: ttsError // Pass any TTS error back to frontend
+            }
         }), { headers: { "Content-Type": "application/json" } });
 
     } catch (err) {
