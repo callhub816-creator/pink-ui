@@ -107,17 +107,17 @@ export async function onRequestPost({ request, env }) {
         ).bind(chatId).all();
         const historyContext = (history || []).reverse().map(m => ({ role: m.role, content: m.body }));
 
-        // 🏗️ DYNAMIC PERSONALITY MAPPING
+        // 🏗️ DYNAMIC PERSONALITY & VOICE MAPPING
         const personas = {
-            'ayesha': { name: 'Ayesha', style: 'bold, witty, playful, and energetic' },
-            'simran': { name: 'Simran', style: 'warm, expressive, calm, and reassuring' },
-            'kiara': { name: 'Kiara', style: 'high-energy, fast-paced, and spontaneous' },
-            'myra': { name: 'Myra', style: 'soft-spoken, relaxed, and thoughtful' },
-            'anjali': { name: 'Anjali', style: 'gentle, slow-paced, and minimalistic' },
-            'mitali': { name: 'Mitali', style: 'intellectual, structured, and topic-driven' }
+            'ayesha': { name: 'Ayesha', style: 'bold, witty, playful, and energetic', voiceId: 'EXAVITQu4vr4xnSDxMaL' }, // Rachel (Sweet but bold)
+            'simran': { name: 'Simran', style: 'warm, expressive, calm, and reassuring', voiceId: 'Lcf78I6pS7IqB4467I6P' }, // Bella (Soft/Warm)
+            'kiara': { name: 'Kiara', style: 'high-energy, fast-paced, and spontaneous', voiceId: '21m00Tcm4TlvDq8ikWAM' }, // Rachel (Energetic)
+            'myra': { name: 'Myra', style: 'soft-spoken, relaxed, and thoughtful', voiceId: 'AZnzlk1XvdvUe3BnKn60' },  // Nicole (Gentle/Whisper)
+            'anjali': { name: 'Anjali', style: 'gentle, slow-paced, and minimalistic', voiceId: 'XrExE9yKIg1WjwdY3FvW' }, // Ellie (Young/Sweet)
+            'mitali': { name: 'Mitali', style: 'intellectual, structured, and topic-driven', voiceId: 'ThT5KcBe7VK6AsUv09Y3' } // Antoinette (Mature/British)
         };
 
-        const activePersona = personas[chatId?.toLowerCase()] || { name: 'Jennifer', style: 'loving and cute' };
+        const activePersona = personas[chatId?.toLowerCase()] || { name: 'Jennifer', style: 'loving and cute', voiceId: 'EXAVITQu4vr4xnSDxMaL' };
 
         const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. Your response MUST BE UNDER 15 WORDS and very natural/intimate." : "";
         const SYSTEM_PROMPT = `You are ${activePersona.name}, a loving AI Girl. 
@@ -144,8 +144,8 @@ export async function onRequestPost({ request, env }) {
         let audioBase64 = null;
         if (isVoiceNote && env.ELEVENLABS_API_KEY) {
             try {
-                const voiceId = env.ELEVENLABS_VOICE_ID || "EXAVITQu4vr4xnSDxMaL"; // Default sweet voice
-                const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+                const voiceIdToUse = activePersona.voiceId || env.ELEVENLABS_VOICE_ID || "EXAVITQu4vr4xnSDxMaL";
+                const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceIdToUse}`, {
                     method: "POST",
                     headers: {
                         "xi-api-key": env.ELEVENLABS_API_KEY,
