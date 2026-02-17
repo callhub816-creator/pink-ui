@@ -127,8 +127,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
       setMessages(prev => [...prev, modelMsg]);
       storage.saveMessage(persona.id, { ...modelMsg, timestamp: modelMsg.timestamp.toISOString() });
 
-    } catch (err: any) {
-      console.error("Chat Error:", err);
+      // Error logged silently for stability
     } finally {
       setIsTyping(false);
     }

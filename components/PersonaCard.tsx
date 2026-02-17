@@ -95,7 +95,6 @@ const PersonaCard: React.FC<PersonaCardProps> = ({
   const generateImage = async () => {
     const API_KEY = getApiKey();
     if (!API_KEY) {
-      console.warn("API Key missing, skipping generation.");
       setUsePlaceholder(true);
       setStatus('success');
       return;
@@ -131,11 +130,9 @@ const PersonaCard: React.FC<PersonaCardProps> = ({
       setStatus(foundImage ? 'success' : 'error');
       if (!foundImage) setErrorMsg("No image generated");
     } catch (error: any) {
-      console.error("Generation failed", error);
       setStatus('error');
 
       if (isRateLimit(error)) {
-        console.warn(`Rate limit hit for ${persona.name}, switching to placeholder.`);
         setUsePlaceholder(true);
         setStatus('success');
         return;

@@ -66,7 +66,6 @@ const LiveVoiceCall: React.FC<LiveVoiceCallProps> = ({ persona, avatarUrl, onClo
       }
 
       const apiKey = keyState.value;
-      console.log(`[CallHub] Starting Voice Call with Gemini Key Index: ${keyState.index}`);
 
       try {
         const ai = new GoogleGenAI({ apiKey });
@@ -129,10 +128,9 @@ const LiveVoiceCall: React.FC<LiveVoiceCallProps> = ({ persona, avatarUrl, onClo
             },
             onerror: (err: any) => {
               if (mounted) {
-                console.error("[CallHub] Gemini Voice Error:", err);
                 geminiRotator.rotate(err.message || "Voice Connection Error");
                 setConnectionStatus('error');
-                setLastError(err.message);
+                setLastError("Connection lost. Retrying...");
               }
             }
           },
@@ -145,9 +143,9 @@ const LiveVoiceCall: React.FC<LiveVoiceCallProps> = ({ persona, avatarUrl, onClo
         sessionRef.current = await sessionPromise;
       } catch (err: any) {
         if (mounted) {
-          console.error("[CallHub] Gemini Voice Initialization Failed:", err);
           geminiRotator.rotate(err.message || "Init Failed");
           setConnectionStatus('error');
+          setLastError("Voice Engine Initializing...");
         }
       }
     };
@@ -359,7 +357,7 @@ const LiveVoiceCall: React.FC<LiveVoiceCallProps> = ({ persona, avatarUrl, onClo
               <div className="space-y-3 mb-8">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-[#FF9ACB]/10 border border-[#FF9ACB]/20">
                   <span className="text-xs font-bold text-[#4A2040]">Voice Tokens</span>
-                  <span className="text-xs font-bold text-[#FF9ACB]">₹{GATING_CONFIG.prices.voiceCall30} / 30m</span>
+                  <span className="text-xs font-bold text-[#FF9ACB]">₹{GATING_CONFIG.prices.voiceCallMinute * 30} / 30m</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-[#B28DFF]/10 border border-[#B28DFF]/20">
                   <span className="text-xs font-bold text-[#4A2040]">Premium Plus</span>

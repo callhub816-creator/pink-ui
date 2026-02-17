@@ -1,5 +1,5 @@
 import React from 'react';
-console.log('%c CALLHUB APP V:2.0.0 (Hardened) ', 'background: #222; color: #bada55; font-size: 20px;');
+console.log('%c CALLHUB AI: Protected Connection Active ', 'background: #4A2040; color: #FF9ACB; font-size: 14px; font-weight: bold; padding: 4px; border-radius: 4px;');
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
