@@ -381,18 +381,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const spendHearts = (amount: number) => {
-    if (profile.hearts < amount) return false;
-    const updated = { ...profile, hearts: profile.hearts - amount };
-    setProfile(updated);
-    storage.saveProfile(updated);
-    syncProfile(updated);
-    return true;
+  const spendHearts = async (amount: number) => {
+    try {
+      const res = await authFetch('/api/user/spend_hearts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, reason: 'Manual Spend' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      if (data.success) {
+        setProfile(data.profile);
+        storage.saveProfile(data.profile);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Spend Hearts Error:", err);
+      return false;
+    }
   };
 
-  const sendGift = (companionId: string | number, giftId: string) => {
-    // Placeholder
-    return true;
+  const sendGift = async (companionId: string | number, giftId: string) => {
+    // Gift prices map (ensure sync with constants)
+    const prices: Record<string, number> = { 'rose': 10, 'chocolate': 25, 'teddy': 50, 'ring': 150, 'necklace': 500 };
+    const price = prices[giftId] || 10;
+
+    return await spendHearts(price);
   };
 
   const unlockConnectionTier = (companionId: string | number, tier: ConnectionLevel) => {

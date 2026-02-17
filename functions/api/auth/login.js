@@ -52,7 +52,8 @@ export async function onRequestPost({ request, env }) {
         const payloadUint8 = encoder.encode(payload);
         const payloadB64 = btoa(String.fromCharCode(...payloadUint8));
 
-        const secret = env.JWT_SECRET || "default_hush_hush_secret";
+        const secret = env.JWT_SECRET;
+        if (!secret) throw new Error("JWT_SECRET missing in environment");
         const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
         const signature = await crypto.subtle.sign("HMAC", key, payloadUint8);
         const token = payloadB64 + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));

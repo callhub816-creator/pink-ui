@@ -17,8 +17,8 @@ const GiftSelector: React.FC<GiftSelectorProps> = ({ onClose, companionId, compa
     const { profile, sendGift } = useAuth();
     const { showNotification } = useNotification();
 
-    const handleSendGift = (giftId: string, giftName: string, icon: string) => {
-        const success = sendGift(companionId, giftId);
+    const handleSendGift = async (giftId: string, giftName: string, icon: string) => {
+        const success = await sendGift(companionId, giftId);
         if (success) {
             showNotification(`You sent a ${giftName} ${icon} to ${companionName}. Trust deepened! ✨`, 'success');
             onGiftSent(giftName, icon);
