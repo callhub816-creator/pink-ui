@@ -2,6 +2,12 @@
 export async function onRequestGet({ request, env }) {
     if (!env.DB) return new Response(JSON.stringify({ error: "DB missing" }), { status: 500 });
 
+    // 🔒 ADMIN AUTH CHECK
+    const adminKey = request.headers.get("x-admin-secret");
+    if (!adminKey || adminKey !== env.ADMIN_SECRET_KEY) {
+        return new Response(JSON.stringify({ error: "Unauthorized: Admin access required." }), { status: 401 });
+    }
+
     try {
         // Simple Admin Auth Check (can be improved later with specific roles)
         // For now, it's open for admin console testing
