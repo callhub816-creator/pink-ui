@@ -205,14 +205,16 @@ export async function onRequestPost({ request, env }) {
                 if (llmRes.ok) {
                     aiReply = data.choices?.[0]?.message?.content || aiReply;
                 } else {
-                    llmError = `SambaNova Error: ${data.error?.message || llmRes.statusText}`;
-                    console.error("SambaNova API Failure:", data);
+                    llmError = "AI Engine is temporarily unavailable. Please try again.";
+                    console.error("DEBUG [SambaNova Failure]:", data.error?.message || llmRes.statusText);
                 }
             } catch (err) {
-                llmError = `SambaNova Connection Failed: ${err.message}`;
+                llmError = "Connection to AI Engine failed.";
+                console.error("DEBUG [SambaNova Connection Error]:", err.message);
             }
         } else {
-            llmError = "SambaNova API Key missing in environment (Check SAMBANOVA_API_KEY).";
+            llmError = "AI Configuration missing. Please contact support.";
+            console.error("DEBUG: SAMBANOVA_API_KEY is not defined in environment variables.");
         }
 
         // 🎙️ ELEVENLABS TTS (If Voice Note requested)
@@ -221,7 +223,8 @@ export async function onRequestPost({ request, env }) {
 
         if (isVoiceNote) {
             if (!env.ELEVENLABS_API_KEY) {
-                ttsError = "ElevenLabs API Key is missing in Environment Variables.";
+                ttsError = "Voice Engine configuration missing.";
+                console.error("DEBUG: ELEVENLABS_API_KEY is missing.");
             } else {
                 try {
                     const voiceIdToUse = activePersona.voiceId || "EXAVITQu4vr4xnSDxMaL";
@@ -245,12 +248,13 @@ export async function onRequestPost({ request, env }) {
                         for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
                         audioBase64 = `data:audio/mpeg;base64,${btoa(binary)}`;
                     } else {
+                        ttsError = "Voice note could not be generated.";
                         const errData = await ttsRes.json();
-                        ttsError = `ElevenLabs Error: ${errData.detail?.status || ttsRes.status} - ${errData.detail?.message || "Unknown error"}`;
+                        console.error("DEBUG [ElevenLabs Failure]:", errData);
                     }
                 } catch (ttsErr) {
-                    console.error("TTS Failed:", ttsErr);
-                    ttsError = "TTS Connection Failed.";
+                    console.error("DEBUG [TTS Connection Failed]:", ttsErr);
+                    ttsError = "Voice service connection timeout.";
                 }
             }
         }
