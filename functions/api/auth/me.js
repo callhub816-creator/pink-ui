@@ -12,12 +12,15 @@ export async function onRequestGet({ request, env }) {
         token = cookies["auth_token"];
     }
 
-    if (!token) {
-        return new Response(JSON.stringify({ error: "Not logged in" }), { status: 401 });
-    }
+    if (!token) return new Response(JSON.stringify({ error: "Not logged in" }), { status: 401 });
 
     try {
-        const [payloadB64, signatureB64] = token.split(".");
+        const parts = token.split(".");
+        const isStandardJWT = parts.length === 3;
+        const payloadB64 = isStandardJWT ? parts[1] : parts[0];
+        const signatureB64 = isStandardJWT ? parts[2] : parts[1];
+
+        if (!payloadB64 || !signatureB64) throw new Error("Malformatted token parts");
 
         const decoder = new TextDecoder();
         const payloadUint8 = new Uint8Array(atob(payloadB64).split("").map(c => c.charCodeAt(0)));
@@ -43,19 +46,21 @@ export async function onRequestGet({ request, env }) {
         const signature = new Uint8Array(atob(signatureB64).split("").map(c => c.charCodeAt(0)));
         const isValid = await crypto.subtle.verify("HMAC", key, signature, encoder.encode(payloadStr));
 
-        if (!isValid) {
-            return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401 });
-        }
+        if (!isValid) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401 });
 
         // Fetch latest profile from DB
+        let profileData = {};
         if (env.DB) {
             const user = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(payload.id).first();
             if (user) {
-                payload.profileData = JSON.parse(user.profile_data || "{}");
+                profileData = JSON.parse(user.profile_data || "{}");
             }
         }
 
-        return new Response(JSON.stringify(payload), { headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({
+            ...payload,
+            profileData
+        }), { headers: { "Content-Type": "application/json" } });
 
     } catch (err) {
         return new Response(JSON.stringify({
