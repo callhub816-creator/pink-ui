@@ -97,9 +97,20 @@ export async function onRequestPost({ request, env }) {
         }
 
         // 🏗️ LLM EXECUTION
-        const keys = [env.SAMBANOVA_API_KEY, env.SAMBANOVA_API_KEY_1].filter(k => k);
+        // 🔑 SUPPORT BOTH COMMA-SEPARATED AND INDIVIDUAL KEYS
+        const rawKeys = [env.SAMBANOVA_API_KEY, env.SAMBANOVA_API_KEY_1].filter(Boolean);
+        let keys = [];
+        rawKeys.forEach(rk => {
+            if (rk.includes(',')) {
+                keys = [...keys, ...rk.split(',').map(k => k.trim())];
+            } else {
+                keys.push(rk.trim());
+            }
+        });
+        keys = keys.filter(k => k);
+
         const selectedKey = keys[Math.floor(Math.random() * keys.length)];
-        let aiReply = "Hmm... I'm listening... ❤️";
+        let aiReply = "Suno na, mera network thoda slow hai... Ek baar phir se bolo? ❤️"; // More natural fallback
 
         // 🚀 FETCH USER DATA FOR PERSONALIZATION
         const userRow = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(userId).first();
