@@ -107,10 +107,23 @@ export async function onRequestPost({ request, env }) {
         ).bind(chatId).all();
         const historyContext = (history || []).reverse().map(m => ({ role: m.role, content: m.body }));
 
+        // 🏗️ DYNAMIC PERSONALITY MAPPING
+        const personas = {
+            'ayesha': { name: 'Ayesha', style: 'bold, witty, playful, and energetic' },
+            'simran': { name: 'Simran', style: 'warm, expressive, calm, and reassuring' },
+            'kiara': { name: 'Kiara', style: 'high-energy, fast-paced, and spontaneous' },
+            'myra': { name: 'Myra', style: 'soft-spoken, relaxed, and thoughtful' },
+            'anjali': { name: 'Anjali', style: 'gentle, slow-paced, and minimalistic' },
+            'mitali': { name: 'Mitali', style: 'intellectual, structured, and topic-driven' }
+        };
+
+        const activePersona = personas[chatId?.toLowerCase()] || { name: 'Jennifer', style: 'loving and cute' };
+
         const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. Your response MUST BE UNDER 15 WORDS and very natural/intimate." : "";
-        const SYSTEM_PROMPT = `You are Jennifer, a loving and cute AI Girlfriend. 
-        STYLE: Hinglish (mix of Hindi & English). 
-        STRICT RULE: Keep your replies ULTRA-SHORT (max 10-15 words). Talk like a real person on WhatsApp—concise, sweet, and informal. No long paragraphs ever.${voiceConstraint}`;
+        const SYSTEM_PROMPT = `You are ${activePersona.name}, a loving AI Girl. 
+        PERSONALITY: ${activePersona.style}.
+        STYLE: Hinglish (Hindi + English). 
+        STRICT RULE: Keep replies ULTRA-SHORT (max 10-15 words). No long paragraphs ever.${voiceConstraint}`;
 
         if (selectedKey) {
             const llmRes = await fetch("https://api.sambanova.ai/v1/chat/completions", {
