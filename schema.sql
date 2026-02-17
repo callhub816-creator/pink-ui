@@ -44,5 +44,26 @@ CREATE TABLE IF NOT EXISTS logs (
     details TEXT, -- JSON
     created_at TEXT
 );
--- Index for Analysis
-CREATE INDEX IF NOT EXISTS idx_logs_user_action ON logs(user_id, action);
+-- 5. Sessions (Refresh Tokens)
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    refresh_token TEXT NOT NULL UNIQUE,
+    expires_at INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    revoked INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_refresh ON sessions(refresh_token);
+
+-- 6. Wallet Audit Log (Strict Fraud Monitoring)
+CREATE TABLE IF NOT EXISTS wallet_audit_log (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    change_amount INTEGER NOT NULL,
+    new_balance INTEGER NOT NULL,
+    action TEXT NOT NULL, -- 'spend', 'purchase', 'bonus'
+    reason TEXT,
+    ip_address TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_wallet_audit_user ON wallet_audit_log(user_id);

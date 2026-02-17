@@ -38,24 +38,47 @@ export async function onRequestPost({ request, env }) {
 
     try {
         const { amount, reason } = await request.json();
-        if (!amount || amount <= 0) return new Response(JSON.stringify({ error: "Invalid amount" }), { status: 400 });
 
-        // 🛡️ ATOMIC DEBIT (SQL Level)
-        const result = await env.DB.prepare(`
-            UPDATE users 
-            SET profile_data = json_set(profile_data, '$.hearts', CAST(json_extract(profile_data, '$.hearts') AS INTEGER) - ?)
-            WHERE id = ? AND CAST(json_extract(profile_data, '$.hearts') AS INTEGER) >= ?
-        `).bind(amount, userId, amount).run();
-
-        if (result.meta.changes === 0) {
-            return new Response(JSON.stringify({ error: "Insufficient hearts" }), { status: 400 });
+        // 1. 🛡️ STRICT VALIDATION (Overflow & Type)
+        if (typeof amount !== 'number' || amount <= 0 || amount > 1000) {
+            return new Response(JSON.stringify({ error: "Suspicious amount detected" }), { status: 400 });
         }
 
-        // Fetch remaining for frontend sync
-        const userRow = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(userId).first();
-        const updatedProfile = JSON.parse(userRow.profile_data);
+        // 2. 🕵️ ABNORMAL BEHAVIOR DETECTION (Rate Limit: 5 Spends per 60s)
+        const minuteAgo = new Date(Date.now() - 60000).toISOString();
+        const { count: recentSpends } = await env.DB.prepare("SELECT COUNT(*) as count FROM wallet_audit_log WHERE user_id = ? AND created_at > ?")
+            .bind(userId, minuteAgo).first();
 
-        return new Response(JSON.stringify({ success: true, hearts: updatedProfile.hearts, profile: updatedProfile }), { headers: { "Content-Type": "application/json" } });
+        if (recentSpends >= 5) {
+            return new Response(JSON.stringify({ error: "Too many transactions. Wait a minute." }), { status: 429 });
+        }
+
+        // 3. 💾 ATOMIC DEBIT + AUDIT TRAIL
+        const userRowBefore = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(userId).first();
+        const profileBefore = JSON.parse(userRowBefore.profile_data);
+        const oldBalance = profileBefore.hearts || 0;
+
+        if (oldBalance < amount) return new Response(JSON.stringify({ error: "Insufficient hearts" }), { status: 400 });
+
+        const newBalance = oldBalance - amount;
+        const nowIso = new Date().toISOString();
+        const ip = request.headers.get("cf-connecting-ip") || "unknown";
+
+        await env.DB.batch([
+            env.DB.prepare(`
+                UPDATE users 
+                SET profile_data = json_set(profile_data, '$.hearts', ?)
+                WHERE id = ? 
+            `).bind(newBalance, userId),
+            env.DB.prepare(`
+                INSERT INTO wallet_audit_log (id, user_id, change_amount, new_balance, action, reason, ip_address, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(crypto.randomUUID(), userId, -amount, newBalance, 'spend', reason || "manual_spend", ip, nowIso)
+        ]);
+
+        return new Response(JSON.stringify({ success: true, hearts: newBalance, profile: { ...profileBefore, hearts: newBalance } }), {
+            headers: { "Content-Type": "application/json" }
+        });
 
     } catch (err) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });

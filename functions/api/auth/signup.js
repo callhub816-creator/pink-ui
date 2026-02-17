@@ -42,37 +42,47 @@ export async function onRequestPost({ request, env }) {
         const passwordHash = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
         const passwordSalt = btoa(String.fromCharCode(...salt));
 
-        // 3. Insert into DB (Batch: User + Audit Log)
+        // 3. Prepare ID and Timestamps
         const userId = crypto.randomUUID();
         const nowIso = new Date().toISOString();
+
+        // 4. Create Session (Access Token: 15 Mins, Refresh Token: 30 Days)
+        const accessTokenExp = Date.now() + (15 * 60 * 1000);
+        const refreshTokenVal = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(48))));
+        const refreshExp = Date.now() + (30 * 86400000);
+
+        const payload = JSON.stringify({ id: userId, username, displayName, exp: accessTokenExp });
+        const payloadUint8 = encoder.encode(payload);
+        const payloadB64 = btoa(String.fromCharCode(...payloadUint8));
+
+        const secret = env.JWT_SECRET;
+        if (!secret) throw new Error("JWT_SECRET missing");
+        const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+        const signature = await crypto.subtle.sign("HMAC", key, payloadUint8);
+        const accessToken = payloadB64 + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));
+
         await env.DB.batch([
             env.DB.prepare(
                 "INSERT INTO users (id, username, display_name, password_hash, password_salt, profile_data, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
             ).bind(userId, username, displayName, passwordHash, passwordSalt, JSON.stringify(profileData || {}), nowIso),
             env.DB.prepare(
+                "INSERT INTO sessions (id, user_id, refresh_token, expires_at, created_at) VALUES (?, ?, ?, ?, ?)"
+            ).bind(crypto.randomUUID(), userId, refreshTokenVal, refreshExp, nowIso),
+            env.DB.prepare(
                 "INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)"
             ).bind(crypto.randomUUID(), userId, 'signup', JSON.stringify({ ip: request.headers.get("cf-connecting-ip") || "unknown" }), nowIso)
         ]);
 
-        // 4. Create Session Cookie (Login immediately after signup)
-        const payload = JSON.stringify({ id: userId, username, displayName, exp: Date.now() + (30 * 86400000) }); // 30 Days
-        const payloadUint8 = encoder.encode(payload);
-        const payloadB64 = btoa(String.fromCharCode(...payloadUint8));
-
-        const secret = env.JWT_SECRET;
-        if (!secret) throw new Error("JWT_SECRET missing in environment");
-        const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-        const signature = await crypto.subtle.sign("HMAC", key, payloadUint8);
-        const token = payloadB64 + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));
-
         return new Response(JSON.stringify({
             success: true,
-            token,
             user: { id: userId, username, displayName }
         }), {
             headers: {
                 "Content-Type": "application/json",
-                "Set-Cookie": `auth_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`
+                "Set-Cookie": [
+                    `auth_token=${accessToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=900`,
+                    `refresh_token=${refreshTokenVal}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000`
+                ].join(', ')
             }
         });
 

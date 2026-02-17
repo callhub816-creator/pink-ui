@@ -47,35 +47,40 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // 3. Create Session (30 Days)
-        const payload = JSON.stringify({ id: user.id, username: user.username, displayName: user.display_name, exp: Date.now() + (30 * 86400000) });
+        // 3. Create Session (Access Token: 15 Mins, Refresh Token: 30 Days)
+        const exp = Date.now() + (15 * 60 * 1000); // 15 Mins
+        const payload = JSON.stringify({ id: user.id, username: user.username, displayName: user.display_name, exp });
         const payloadUint8 = encoder.encode(payload);
         const payloadB64 = btoa(String.fromCharCode(...payloadUint8));
 
         const secret = env.JWT_SECRET;
-        if (!secret) throw new Error("JWT_SECRET missing in environment");
+        if (!secret) throw new Error("JWT_SECRET missing");
         const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
         const signature = await crypto.subtle.sign("HMAC", key, payloadUint8);
-        const token = payloadB64 + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));
+        const accessToken = payloadB64 + "." + btoa(String.fromCharCode(...new Uint8Array(signature)));
 
-        // 4. Audit Log (Login Success)
-        try {
-            await env.DB.prepare(
-                "INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)"
-            ).bind(crypto.randomUUID(), user.id, 'login', JSON.stringify({ ip: request.headers.get("cf-connecting-ip") || "unknown" }), new Date().toISOString()).run();
-        } catch (e) {
-            console.error("Audit log failed:", e);
-        }
+        // 4. Create Refresh Token
+        const refreshToken = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(48))));
+        const refreshExp = Date.now() + (30 * 86400000);
+
+        await env.DB.batch([
+            env.DB.prepare("INSERT INTO sessions (id, user_id, refresh_token, expires_at, created_at) VALUES (?, ?, ?, ?, ?)")
+                .bind(crypto.randomUUID(), user.id, refreshToken, refreshExp, new Date().toISOString()),
+            env.DB.prepare("INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)")
+                .bind(crypto.randomUUID(), user.id, 'login', JSON.stringify({ ip: request.headers.get("cf-connecting-ip") || "unknown" }), new Date().toISOString())
+        ]);
 
         return new Response(JSON.stringify({
             success: true,
-            token,
             user: { id: user.id, username: user.username, displayName: user.display_name },
             profileData: JSON.parse(user.profile_data || "{}")
         }), {
             headers: {
                 "Content-Type": "application/json",
-                "Set-Cookie": `auth_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`
+                "Set-Cookie": [
+                    `auth_token=${accessToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=900`,
+                    `refresh_token=${refreshToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000`
+                ].join(', ')
             }
         });
 

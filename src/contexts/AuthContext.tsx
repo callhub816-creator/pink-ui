@@ -39,14 +39,19 @@ export const useAuth = () => {
   return ctx;
 };
 
-// Helper for authenticated fetches
+// Helper for authenticated fetches with Auto-Refresh
 const authFetch = async (url: string, options: any = {}) => {
-  const token = localStorage.getItem('auth_token');
-  const headers = {
-    ...options.headers,
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  };
-  return fetch(url, { ...options, headers });
+  let res = await fetch(url, options);
+
+  // If 401, attempt refresh automatically
+  if (res.status === 401) {
+    const refreshRes = await fetch('/api/auth/refresh', { method: 'POST' });
+    if (refreshRes.ok) {
+      // Retry original request
+      res = await fetch(url, options);
+    }
+  }
+  return res;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -68,28 +73,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ profileData: updatedProfile })
       });
     } catch (err) {
-      console.warn('Sync failed - likely guest mode');
+      console.warn('Sync failed');
     }
   }, []);
 
   // Fetch user session on load
   useEffect(() => {
     const checkAuth = async () => {
-      // DEV MODE BYPASS: Auto-login
-      // @ts-ignore
-      if (import.meta.env.DEV) {
-        console.log('Dev Mode: Bypassing Login (Dev User)');
-        setUser({ id: 'dev-user', username: 'dev', displayName: 'Dev User' });
-        setLoading(false);
-        return;
-      }
-
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
       try {
         const res = await authFetch('/api/auth/me');
         if (res.ok) {
@@ -100,12 +90,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             storage.saveProfile(userData.profileData);
             setProfile(userData.profileData);
           }
-        } else if (res.status === 401) {
-          localStorage.removeItem('auth_token');
+        } else {
           setUser(null);
         }
       } catch (err) {
-        console.debug('Auth check failed');
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -125,7 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Signup failed');
 
-      localStorage.setItem('auth_token', data.token);
       setUser(data.user);
       return { data, error: null };
     } catch (error: any) {
@@ -168,7 +156,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(errorMessage);
       }
 
-      localStorage.setItem('auth_token', data.token);
       setUser(data.user);
       if (data.profileData) {
         storage.saveProfile(data.profileData);
