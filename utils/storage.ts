@@ -194,6 +194,13 @@ export const storage = {
   },
 
   saveProfile: (profile: UserProfile) => {
+    // Auto-prune earnings history older than 7 days
+    if (profile.earningsHistory) {
+      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      profile.earningsHistory = profile.earningsHistory
+        .filter(item => new Date(item.timestamp).getTime() > cutoff)
+        .slice(0, 50);
+    }
     localStorage.setItem('callhub_user_profile', JSON.stringify(profile));
   },
 

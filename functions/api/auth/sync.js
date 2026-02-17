@@ -40,6 +40,13 @@ export async function onRequestPost({ request, env }) {
             avatarUrl: profileData.avatarUrl || existingProfile.avatarUrl,
             bio: profileData.bio || existingProfile.bio,
             preferred_reply_language: profileData.preferred_reply_language || existingProfile.preferred_reply_language,
+            // Prune history to last 7 days during sync
+            earningsHistory: (profileData.earningsHistory || existingProfile.earningsHistory || [])
+                .filter(item => {
+                    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                    return new Date(item.timestamp).getTime() > cutoff;
+                })
+                .slice(0, 50),
             // Keep critical fields from SERVER state
             hearts: existingProfile.hearts ?? 10,
             subscription_tier: existingProfile.subscription_tier ?? 'free',

@@ -56,6 +56,9 @@ export async function onRequestPost({ request, env }) {
 
         // 4. Update Profile
         const bonusAmount = 10;
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        const historyLimit = now - SEVEN_DAYS_MS;
+
         const newRecord = {
             id: Date.now().toString(),
             type: 'bonus',
@@ -64,12 +67,16 @@ export async function onRequestPost({ request, env }) {
             timestamp: new Date().toISOString()
         };
 
+        const filteredHistory = [newRecord, ...(profile.earningsHistory || [])]
+            .filter(item => new Date(item.timestamp).getTime() > historyLimit)
+            .slice(0, 50);
+
         const updatedProfile = {
             ...profile,
             hearts: (parseInt(profile.hearts) || 0) + bonusAmount,
             lastDailyBonusClaimTs: now, // Store as timestamp
             lastDailyBonusClaim: new Date().toDateString(), // Legacy support
-            earningsHistory: [newRecord, ...(profile.earningsHistory || [])].slice(0, 50)
+            earningsHistory: filteredHistory
         };
 
         await env.DB.prepare("UPDATE users SET profile_data = ? WHERE id = ?")

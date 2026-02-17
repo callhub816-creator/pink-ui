@@ -302,7 +302,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (verifyRes.success) {
               onSuccess();
-              // Add to history
+              const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+              const historyLimit = Date.now() - SEVEN_DAYS_MS;
               const newRecord = {
                 id: Date.now().toString(),
                 type: 'purchase' as const,
@@ -310,8 +311,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 label: description,
                 timestamp: new Date().toISOString()
               };
+              const filteredHistory = [newRecord, ...(profile.earningsHistory || [])]
+                .filter(item => new Date(item.timestamp).getTime() > historyLimit)
+                .slice(0, 50);
+
               await updateProfile({
-                earningsHistory: [newRecord, ...(profile.earningsHistory || [])]
+                earningsHistory: filteredHistory
               });
               showNotification(`Payment Successful! ${description} added.`, 'success');
             } else {
