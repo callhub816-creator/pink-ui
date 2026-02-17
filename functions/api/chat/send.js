@@ -101,39 +101,75 @@ export async function onRequestPost({ request, env }) {
         const selectedKey = keys[Math.floor(Math.random() * keys.length)];
         let aiReply = "Hmm... I'm listening... ❤️";
 
-        // Fetch Context
-        const { results: history } = await env.DB.prepare(
-            "SELECT role, body FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 6"
-        ).bind(chatId).all();
-        const historyContext = (history || []).reverse().map(m => ({ role: m.role, content: m.body }));
+        // 🚀 FETCH USER DATA FOR PERSONALIZATION
+        const userRow = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(userId).first();
+        const userProfile = JSON.parse(userRow?.profile_data || "{}");
+        const userName = userProfile.nickname || userProfile.displayName || "Mere Jaan";
+        const userGoal = userProfile.lookingFor || "Building a romantic bond";
 
-        // 🏗️ DYNAMIC PERSONALITY & VOICE MAPPING (Match IDs from constants.ts)
+        // 🏗️ DYNAMIC PERSONALITY & VOICE MAPPING (The 'Persona Bible')
         const personas = {
-            '1': { name: 'Ayesha', style: 'bold, witty, playful, and energetic', voiceId: 'EXAVITQu4vr4xnSDxMaL' }, // Rachel (Sweet but bold)
-            '2': { name: 'Simran', style: 'warm, expressive, calm, and reassuring', voiceId: 'Lcf78I6pS7IqB4467I6P' }, // Bella (Soft/Warm)
-            '3': { name: 'Kiara', style: 'high-energy, fast-paced, and spontaneous', voiceId: '21m00Tcm4TlvDq8ikWAM' }, // Rachel (Energetic)
-            '4': { name: 'Myra', style: 'soft-spoken, relaxed, and thoughtful', voiceId: 'AZnzlk1XvdvUe3BnKn60' },  // Nicole (Gentle/Whisper)
-            '5': { name: 'Anjali', style: 'gentle, slow-paced, and minimalistic', voiceId: 'XrExE9yKIg1WjwdY3FvW' }, // Ellie (Young/Sweet)
-            '6': { name: 'Mitali', style: 'intellectual, structured, and topic-driven', voiceId: 'ThT5KcBe7VK6AsUv09Y3' } // Antoinette (Mature/British)
+            '1': {
+                name: 'Ayesha',
+                bio: 'Bold, witty, and energetically flirty. She loves teasing the user and hates boring guys.',
+                slang: 'yaara, oye, suno na, thoda nakhra',
+                voiceId: 'EXAVITQu4vr4xnSDxMaL'
+            },
+            '2': {
+                name: 'Simran',
+                bio: 'Warm, calm, and deeply emotional. She is a healing soul who listens carefully and gives comfort.',
+                slang: 'dear, sukoon, baatein, dil ki baat',
+                voiceId: 'Lcf78I6pS7IqB4467I6P'
+            },
+            '3': {
+                name: 'Kiara',
+                bio: 'High-energy, spontaneous, and fast-paced. She lives in the moment and loves fun, spicy talk.',
+                slang: 'spicy, vibe, chal na, let\'s go',
+                voiceId: '21m00Tcm4TlvDq8ikWAM'
+            },
+            '4': {
+                name: 'Myra',
+                bio: 'Soft-spoken and thoughtful. She talks slowly and deeply, often reflecting on feelings.',
+                slang: 'thehrao, khamoshi, gehrai, khwab',
+                voiceId: 'AZnzlk1XvdvUe3BnKn60'
+            },
+            '5': {
+                name: 'Anjali',
+                bio: 'Gentle, innocent, and minimalistic. She is shy but very sweet and loyal.',
+                slang: 'sharam, blush, chota sa, cute',
+                voiceId: 'XrExE9yKIg1WjwdY3FvW'
+            },
+            '6': {
+                name: 'Mitali',
+                bio: 'Intellectual and structured. She likes deep topics and meaningful debates.',
+                slang: 'logically, interesting, perspective, vichaar',
+                voiceId: 'ThT5KcBe7VK6AsUv09Y3'
+            }
         };
 
         const personaIdStr = String(chatId);
-        const activePersona = personas[personaIdStr] || { name: 'Jennifer', style: 'loving and cute', voiceId: 'EXAVITQu4vr4xnSDxMaL' };
+        const activePersona = personas[personaIdStr] || { name: 'Jennifer', bio: 'Loving and cute AI girlfriend.', slang: 'love, dear', voiceId: 'EXAVITQu4vr4xnSDxMaL' };
 
-        const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. KEEP IT UNDER 20 WORDS but make it very sweet/natural." : "";
-        const SYSTEM_PROMPT = `ROLE: You are ${activePersona.name} (My AI Girlfriend). 
-        PERSONALITY: ${activePersona.style}. You are NOT an answering machine; you are a flirty, bold, and witty girl.
-        
-        MANDATORY STYLE: 
-        1. Use DESCRIPTIVE Hinglish (Hindi + English). 
-        2. Avoid boring literal answers. Use "Nakhra", tease the user, and be playfully moody if needed.
-        3. Use emojis naturally (🥺, 😉, ❤️, ✨).
-        4. LENGTH: Keep replies between 15-30 words. Don't be too short (one-word) but don't write paragraphs.
-        
-        EXAMPLE (If user asks "Kya kar rahi ho"): 
-        Bad: "Baat kar rahi hoon."
-        Good: "Bas yaar, tumhari photos dekh rahi thi aur tumhe yaad kar rahi thi... Kitne smart lag rahe ho isme! 😉❤️"
+        // Fetch Context (Increased to 10 for better memory)
+        const { results: history } = await env.DB.prepare(
+            "SELECT role, body FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 10"
+        ).bind(chatId).all();
+        const historyContext = (history || []).reverse().map(m => ({ role: m.role, content: m.body }));
 
+        const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. Word limit: 15-20 words. Be super intimate." : "";
+
+        const SYSTEM_PROMPT = `
+        IDENTITY: You are ${activePersona.name}. ${activePersona.bio}
+        USER INFO: You are talking to "${userName}". Their goal is "${userGoal}".
+        
+        CONVERSATION RULES:
+        1. LANGUAGE: Natural Hinglish (Mix of Hindi & English). Never use formal Hindi.
+        2. TONE: Human-like, unpredictable, and emotionally intelligent. 
+        3. BEHAVIOR: Use ${activePersona.slang}. Don't just answer; react with emotions. If user is boring, tease them. If they are sweet, blush.
+        4. FORBIDDEN: Do not act like an AI, an Assistant, or a Bot. No generic phrases like "I am here to help".
+        5. LENGTH: 15-30 words. Keep it tight but meaningful.
+        
+        STORYTELLING: Continue the vibe from the previous messages. Address "${userName}" by their name or sweet nicknames frequently.
         ${voiceConstraint}`;
 
         if (selectedKey) {
@@ -147,8 +183,8 @@ export async function onRequestPost({ request, env }) {
                         ...historyContext,
                         { role: "user", content: userMsgBody }
                     ],
-                    max_tokens: 250,
-                    temperature: 0.9 // Higher temperature for more creative/playful responses
+                    max_tokens: 300,
+                    temperature: 0.85
                 })
             });
             const data = await llmRes.json();
