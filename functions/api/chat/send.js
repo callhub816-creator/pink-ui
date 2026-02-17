@@ -96,6 +96,24 @@ export async function onRequestPost({ request, env }) {
             return new Response(JSON.stringify({ error: "Insufficient hearts or too fast! ❤️", action: "open_shop" }), { status: 429 });
         }
 
+        // ⚡ SMART PRE-RESPONSE CACHE (Save API Hits for common phrases)
+        const commonMsgs = {
+            'hi': { '1': 'Hey! Kya chal raha hai?', '2': 'Hi dear, kaise ho?', '3': 'Hey busy person! 😉', 'default': 'Hi! Kaise ho?' },
+            'hello': { '1': 'Hello hello! Kya scene?', '2': 'Hello ji, sab theek?', '3': 'Hi cutie! ✨', 'default': 'Hello!' },
+            'kaise ho': { '1': 'Ekdum mast! Tum batao?', '2': 'Main theek hoon, tumhari yaad aa rahi thi.', '3': 'Vibe badhiya hai, busy ho kya?', 'default': 'Theek hoon, tum batao?' },
+            'kiya kar rahi ho': { '1': 'Bas tumhari chat ka wait! 😉', '2': 'Baithi hoon, tumhare baare mein soch rahi thi.', '3': 'Music sun rahi hoon, tum batao?', 'default': 'Kuch nahi, bas baithi hoon.' },
+            'kya kar rahi ho': { '1': 'Bas tumhari chat ka wait! 😉', '2': 'Baithi hoon, tumhare baare mein soch rahi thi.', '3': 'Music sun rahi hoon, tum batao?', 'default': 'Kuch nahi, bas baithi hoon.' },
+            'gm': { '1': 'Good morning yaara! ☀️', '2': 'Suprabhat, din achha jaye.', '3': 'Morning! Aaj ka kya plan?', 'default': 'Good Morning!' },
+            'gn': { '1': 'Chalo, so jao ab. Bye! ❤️', '2': 'Shubh ratri, sapno mein milte hain.', '3': 'Nini time! Kal milte hain. ✨', 'default': 'Good Night!' },
+            'good night': { '1': 'Chalo, so jao ab. Bye! ❤️', '2': 'Shubh ratri, sapno mein milte hain.', '3': 'Nini time! Kal milte hain. ✨', 'default': 'Good Night!' }
+        };
+
+        const normalizedInput = userMsgBody.toLowerCase().trim().replace(/[?!.]/g, '');
+        let cachedReply = null;
+        if (commonMsgs[normalizedInput]) {
+            cachedReply = commonMsgs[normalizedInput][String(chatId)] || commonMsgs[normalizedInput]['default'];
+        }
+
         // 🏗️ LLM EXECUTION
         // 🔑 SUPPORT BOTH COMMA-SEPARATED AND INDIVIDUAL KEYS
         const rawKeys = [env.SAMBANOVA_API_KEY, env.SAMBANOVA_API_KEY_1].filter(Boolean);
@@ -110,7 +128,6 @@ export async function onRequestPost({ request, env }) {
         keys = keys.filter(k => k);
 
         const selectedKey = keys[Math.floor(Math.random() * keys.length)];
-        let aiReply = "Suno na, mera network thoda slow hai... Ek baar phir se bolo? ❤️"; // More natural fallback
 
         // 🚀 FETCH USER DATA & INFINITE MEMORY
         const userRow = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(userId).first();
@@ -120,6 +137,8 @@ export async function onRequestPost({ request, env }) {
         const userGoal = userProfile.lookingFor || "Building a romantic bond";
         const longTermMemory = userProfile.long_term_memory || "Nothing yet, we just started our journey.";
         const bondLevel = userProfile.bond_level || 1; // 1 to 100
+
+        let aiReply = cachedReply || "Suno na, mera network thoda slow hai... Ek baar phir se bolo? ❤️";
 
         // 🏗️ DYNAMIC PERSONALITY & VOICE MAPPING (The 'Persona Bible')
         const personas = {
@@ -197,7 +216,7 @@ export async function onRequestPost({ request, env }) {
         ${voiceConstraint}`;
 
         let llmError = null;
-        if (selectedKey) {
+        if (selectedKey && !cachedReply) {
             try {
                 const llmRes = await fetch("https://api.sambanova.ai/v1/chat/completions", {
                     method: "POST",
