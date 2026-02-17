@@ -183,23 +183,36 @@ export async function onRequestPost({ request, env }) {
         STORYTELLING: Continue the vibe from the previous messages. Address "${userName}" by their name or sweet nicknames frequently.
         ${voiceConstraint}`;
 
+        let llmError = null;
         if (selectedKey) {
-            const llmRes = await fetch("https://api.sambanova.ai/v1/chat/completions", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${selectedKey}` },
-                body: JSON.stringify({
-                    model: "Meta-Llama-3.3-70B-Instruct",
-                    messages: [
-                        { role: "system", content: SYSTEM_PROMPT },
-                        ...historyContext,
-                        { role: "user", content: userMsgBody }
-                    ],
-                    max_tokens: 300,
-                    temperature: 0.85
-                })
-            });
-            const data = await llmRes.json();
-            aiReply = data.choices?.[0]?.message?.content || aiReply;
+            try {
+                const llmRes = await fetch("https://api.sambanova.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${selectedKey}` },
+                    body: JSON.stringify({
+                        model: "Meta-Llama-3.3-70B-Instruct",
+                        messages: [
+                            { role: "system", content: SYSTEM_PROMPT },
+                            ...historyContext,
+                            { role: "user", content: userMsgBody }
+                        ],
+                        max_tokens: 300,
+                        temperature: 0.85
+                    })
+                });
+
+                const data = await llmRes.json();
+                if (llmRes.ok) {
+                    aiReply = data.choices?.[0]?.message?.content || aiReply;
+                } else {
+                    llmError = `SambaNova Error: ${data.error?.message || llmRes.statusText}`;
+                    console.error("SambaNova API Failure:", data);
+                }
+            } catch (err) {
+                llmError = `SambaNova Connection Failed: ${err.message}`;
+            }
+        } else {
+            llmError = "SambaNova API Key missing in environment (Check SAMBANOVA_API_KEY).";
         }
 
         // 🎙️ ELEVENLABS TTS (If Voice Note requested)
@@ -257,7 +270,7 @@ export async function onRequestPost({ request, env }) {
                 body: aiReply,
                 created_at: aiNowIso,
                 audioUrl: audioBase64,
-                error: ttsError // Pass any TTS error back to frontend
+                error: llmError || ttsError // Pass LLM or TTS error back to frontend
             }
         }), { headers: { "Content-Type": "application/json" } });
 
