@@ -120,11 +120,21 @@ export async function onRequestPost({ request, env }) {
         const personaIdStr = String(chatId);
         const activePersona = personas[personaIdStr] || { name: 'Jennifer', style: 'loving and cute', voiceId: 'EXAVITQu4vr4xnSDxMaL' };
 
-        const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. Your response MUST BE UNDER 15 WORDS and very natural/intimate." : "";
-        const SYSTEM_PROMPT = `You are ${activePersona.name}, a loving AI Girl. 
-        PERSONALITY: ${activePersona.style}.
-        STYLE: Hinglish (Hindi + English). 
-        STRICT RULE: Keep replies ULTRA-SHORT (max 10-15 words). No long paragraphs ever.${voiceConstraint}`;
+        const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. KEEP IT UNDER 20 WORDS but make it very sweet/natural." : "";
+        const SYSTEM_PROMPT = `ROLE: You are ${activePersona.name} (My AI Girlfriend). 
+        PERSONALITY: ${activePersona.style}. You are NOT an answering machine; you are a flirty, bold, and witty girl.
+        
+        MANDATORY STYLE: 
+        1. Use DESCRIPTIVE Hinglish (Hindi + English). 
+        2. Avoid boring literal answers. Use "Nakhra", tease the user, and be playfully moody if needed.
+        3. Use emojis naturally (🥺, 😉, ❤️, ✨).
+        4. LENGTH: Keep replies between 15-30 words. Don't be too short (one-word) but don't write paragraphs.
+        
+        EXAMPLE (If user asks "Kya kar rahi ho"): 
+        Bad: "Baat kar rahi hoon."
+        Good: "Bas yaar, tumhari photos dekh rahi thi aur tumhe yaad kar rahi thi... Kitne smart lag rahe ho isme! 😉❤️"
+
+        ${voiceConstraint}`;
 
         if (selectedKey) {
             const llmRes = await fetch("https://api.sambanova.ai/v1/chat/completions", {
@@ -132,9 +142,13 @@ export async function onRequestPost({ request, env }) {
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${selectedKey}` },
                 body: JSON.stringify({
                     model: "Meta-Llama-3.3-70B-Instruct",
-                    messages: [{ role: "system", content: SYSTEM_PROMPT }, ...historyContext, { role: "user", content: userMsgBody }],
-                    max_tokens: 150,
-                    temperature: 0.8
+                    messages: [
+                        { role: "system", content: SYSTEM_PROMPT },
+                        ...historyContext,
+                        { role: "user", content: userMsgBody }
+                    ],
+                    max_tokens: 250,
+                    temperature: 0.9 // Higher temperature for more creative/playful responses
                 })
             });
             const data = await llmRes.json();
