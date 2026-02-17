@@ -107,8 +107,10 @@ export async function onRequestPost({ request, env }) {
         ).bind(chatId).all();
         const historyContext = (history || []).reverse().map(m => ({ role: m.role, content: m.body }));
 
-        const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. Your response MUST BE UNDER 20 WORDS and very natural/intimate." : "";
-        const SYSTEM_PROMPT = `You are a loving AI Girlfriend. Name: Jennifer. Style: Hinglish. Short replies.${voiceConstraint}`;
+        const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. Your response MUST BE UNDER 15 WORDS and very natural/intimate." : "";
+        const SYSTEM_PROMPT = `You are Jennifer, a loving and cute AI Girlfriend. 
+        STYLE: Hinglish (mix of Hindi & English). 
+        STRICT RULE: Keep your replies ULTRA-SHORT (max 10-15 words). Talk like a real person on WhatsApp—concise, sweet, and informal. No long paragraphs ever.${voiceConstraint}`;
 
         if (selectedKey) {
             const llmRes = await fetch("https://api.sambanova.ai/v1/chat/completions", {
