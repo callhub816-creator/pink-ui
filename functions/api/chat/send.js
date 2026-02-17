@@ -68,6 +68,17 @@ export async function onRequestPost({ request, env }) {
         if (typeof message !== 'string') return new Response(JSON.stringify({ error: "Invalid message type" }), { status: 400 });
         const userMsgBody = message.trim();
 
+        // 🚀 FETCH ALL USER DATA (Handle + Profile + Memory)
+        const userRow = await env.DB.prepare("SELECT username, profile_data FROM users WHERE id = ?").bind(userId).first();
+        if (!userRow) return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
+
+        const userHandle = userRow.username || "Guest";
+        const userProfile = JSON.parse(userRow.profile_data || "{}");
+        const userName = userProfile.nickname || userProfile.displayName || "Mere Jaan";
+        const userGoal = userProfile.lookingFor || "Building a romantic bond";
+        const longTermMemory = userProfile.long_term_memory || "Nothing yet, we just started our journey.";
+        const bondLevel = userProfile.bond_level || 1;
+
         // 3. 🚀 ATOMIC UPDATE (Deduct Hearts + Rate Limit)
         const heartsToDeduct = isVoiceNote ? 3 : 1;
         const nowMs = Date.now();
@@ -89,7 +100,7 @@ export async function onRequestPost({ request, env }) {
                     OR CAST(json_extract(profile_data, '$.last_message_ts') AS INTEGER) < ?
                 )
             `).bind(heartsToDeduct, nowMs, userId, heartsToDeduct, rateLimitThreshold),
-            env.DB.prepare("INSERT INTO messages (id, chat_id, sender_id, body, created_at, role) VALUES (?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), chatId, userId, userMsgBody, nowIso, 'user')
+            env.DB.prepare("INSERT INTO messages (id, chat_id, sender_id, sender_handle, body, created_at, role) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), chatId, userId, userHandle, userMsgBody, nowIso, 'user')
         ]);
 
         if (batchResult[0].meta.changes === 0) {
@@ -128,16 +139,6 @@ export async function onRequestPost({ request, env }) {
         keys = keys.filter(k => k);
 
         const selectedKey = keys[Math.floor(Math.random() * keys.length)];
-
-        // 🚀 FETCH USER DATA & INFINITE MEMORY
-        const userRow = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(userId).first();
-        const userProfile = JSON.parse(userRow?.profile_data || "{}");
-
-        const userName = userProfile.nickname || userProfile.displayName || "Mere Jaan";
-        const userGoal = userProfile.lookingFor || "Building a romantic bond";
-        const longTermMemory = userProfile.long_term_memory || "Nothing yet, we just started our journey.";
-        const bondLevel = userProfile.bond_level || 1; // 1 to 100
-
         let aiReply = cachedReply || "Suno na, mera network thoda slow hai... Ek baar phir se bolo? ❤️";
 
         // 🏗️ DYNAMIC PERSONALITY & VOICE MAPPING (The 'Persona Bible')
@@ -318,8 +319,8 @@ export async function onRequestPost({ request, env }) {
         const aiNowIso = new Date().toISOString();
         const metadata = audioBase64 ? JSON.stringify({ audioUrl: audioBase64 }) : null;
 
-        await env.DB.prepare("INSERT INTO messages (id, chat_id, sender_id, body, created_at, role, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            .bind(aiMsgId, chatId, 'ai_assistant', aiReply, aiNowIso, 'assistant', metadata).run();
+        await env.DB.prepare("INSERT INTO messages (id, chat_id, sender_id, sender_handle, body, created_at, role, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            .bind(aiMsgId, chatId, 'ai_assistant', activePersona.name, aiReply, aiNowIso, 'assistant', metadata).run();
 
         return new Response(JSON.stringify({
             success: true,

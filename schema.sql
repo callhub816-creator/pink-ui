@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS messages (
     body TEXT,
     created_at TEXT NOT NULL,
     role TEXT DEFAULT 'user', -- 'user' or 'assistant'
+    sender_handle TEXT, -- Human readable username for easy DB audits
     metadata TEXT, -- JSON for extra info
     is_deleted INTEGER DEFAULT 0
 );
