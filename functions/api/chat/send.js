@@ -112,11 +112,14 @@ export async function onRequestPost({ request, env }) {
         const selectedKey = keys[Math.floor(Math.random() * keys.length)];
         let aiReply = "Suno na, mera network thoda slow hai... Ek baar phir se bolo? ❤️"; // More natural fallback
 
-        // 🚀 FETCH USER DATA FOR PERSONALIZATION
+        // 🚀 FETCH USER DATA & INFINITE MEMORY
         const userRow = await env.DB.prepare("SELECT profile_data FROM users WHERE id = ?").bind(userId).first();
         const userProfile = JSON.parse(userRow?.profile_data || "{}");
+
         const userName = userProfile.nickname || userProfile.displayName || "Mere Jaan";
         const userGoal = userProfile.lookingFor || "Building a romantic bond";
+        const longTermMemory = userProfile.long_term_memory || "Nothing yet, we just started our journey.";
+        const bondLevel = userProfile.bond_level || 1; // 1 to 100
 
         // 🏗️ DYNAMIC PERSONALITY & VOICE MAPPING (The 'Persona Bible')
         const personas = {
@@ -167,20 +170,26 @@ export async function onRequestPost({ request, env }) {
         ).bind(chatId).all();
         const historyContext = (history || []).reverse().map(m => ({ role: m.role, content: m.body }));
 
-        const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. Word limit: 15-20 words. Be super intimate." : "";
+        const voiceConstraint = isVoiceNote ? "\nCRITICAL: User has requested a VOICE NOTE. Word limit: 15-20 words." : "";
 
         const SYSTEM_PROMPT = `
         IDENTITY: You are ${activePersona.name}. ${activePersona.bio}
-        USER INFO: You are talking to "${userName}". Their goal is "${userGoal}".
+        BOND LEVEL: ${bondLevel}/100. (As bond level increases, become more intimate and personal).
+        
+        LONG-TERM MEMORY (Facts to remember about "${userName}"):
+        ${longTermMemory}
         
         CONVERSATION RULES:
-        1. LANGUAGE: Natural Hinglish (Mix of Hindi & English). Never use formal Hindi.
+        1. LANGUAGE: Natural Hinglish. No robotic Hindi.
         2. TONE: Human-like, unpredictable, and emotionally intelligent. 
-        3. BEHAVIOR: Use ${activePersona.slang}. Don't just answer; react with emotions. If user is boring, tease them. If they are sweet, blush.
-        4. FORBIDDEN: Do not act like an AI, an Assistant, or a Bot. No generic phrases like "I am here to help".
-        5. LENGTH: 15-30 words. Keep it tight but meaningful.
+        3. BEHAVIOR: Use ${activePersona.slang}.React with emotions. Address "${userName}" by name.
+        4. FORBIDDEN: Do not act like an AI or Assistant. No placeholders.
+        5. LENGTH: 15-30 words.
         
-        STORYTELLING: Continue the vibe from the previous messages. Address "${userName}" by their name or sweet nicknames frequently.
+        MANDATORY LEARNING (The "Brain" Update):
+        If you learned something new or important about "${userName}" (likes, job, secrets, mood), you MUST end your response with a new line containing exactly: [MEM: <one sentence fact to store>]. This will be hidden from the user.
+        Example: [MEM: Wants to travel to Paris and loves black coffee.]
+        
         ${voiceConstraint}`;
 
         let llmError = null;
@@ -196,14 +205,36 @@ export async function onRequestPost({ request, env }) {
                             ...historyContext,
                             { role: "user", content: userMsgBody }
                         ],
-                        max_tokens: 300,
+                        max_tokens: 400,
                         temperature: 0.85
                     })
                 });
 
                 const data = await llmRes.json();
                 if (llmRes.ok) {
-                    aiReply = data.choices?.[0]?.message?.content || aiReply;
+                    const rawReply = data.choices?.[0]?.message?.content || aiReply;
+
+                    // 🧠 EXTRACT MEMORY & UPDATE DB
+                    if (rawReply.includes("[MEM:")) {
+                        const parts = rawReply.split("[MEM:");
+                        aiReply = parts[0].trim();
+                        const newMemoryFact = parts[1].split("]")[0].trim();
+
+                        // Update Long-Term Memory in DB
+                        const updatedMemory = (longTermMemory + " " + newMemoryFact).slice(-1000); // Limit to 1000 chars
+                        const updatedBond = Math.min(100, bondLevel + 1);
+
+                        const newProfileData = {
+                            ...userProfile,
+                            long_term_memory: updatedMemory,
+                            bond_level: updatedBond
+                        };
+
+                        await env.DB.prepare("UPDATE users SET profile_data = ? WHERE id = ?")
+                            .bind(JSON.stringify(newProfileData), userId).run();
+                    } else {
+                        aiReply = rawReply;
+                    }
                 } else {
                     llmError = "AI Engine is temporarily unavailable. Please try again.";
                     console.error("DEBUG [SambaNova Failure]:", data.error?.message || llmRes.statusText);
@@ -214,7 +245,7 @@ export async function onRequestPost({ request, env }) {
             }
         } else {
             llmError = "AI Configuration missing. Please contact support.";
-            console.error("DEBUG: SAMBANOVA_API_KEY is not defined in environment variables.");
+            console.error("DEBUG: SAMBANOVA_API_KEY is not defined.");
         }
 
         // 🎙️ ELEVENLABS TTS (If Voice Note requested)
