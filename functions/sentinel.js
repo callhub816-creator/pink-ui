@@ -52,6 +52,13 @@ async function runSentinel(env) {
         if (bruteForceIps.results?.length > 0) {
             report.anomalies.push(`🔴 BRUTE FORCE: ${bruteForceIps.results.length} IPs are attempting multiple login failures.`);
             report.checks.brute_force_ips = bruteForceIps.results;
+
+            // 🛡️ ACTION: Add to Guardian Block List (Auto-Shield)
+            for (const row of bruteForceIps.results) {
+                if (env.GUARDIAN_KV) {
+                    await env.GUARDIAN_KV.put(`block:${row.ip}`, "true", { expirationTtl: 3600 });
+                }
+            }
         }
 
         // 5. SEND ALERT IF ANOMALIES FOUND

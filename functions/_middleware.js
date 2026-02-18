@@ -4,16 +4,41 @@ export async function onRequest({ request, next, env }) {
     const now = Date.now();
     const minuteAgo = now - 60000;
 
-    // 1. 🛡️ GLOBAL IP RATE LIMIT (60 req/min)
-    // Using D1 as a simple counter for this demo, usually KV is better for high scale
-    const { count: globalHits } = await env.DB.prepare("SELECT COUNT(*) as count FROM logs WHERE details LIKE ? AND created_at > ?")
-        .bind(`%${ip}%`, new Date(minuteAgo).toISOString()).first();
+    // 🛡️ PHASE 2: GUARDIAN (Runtime Defense)
+    const adminIp = env.ADMIN_IP || "127.0.0.1";
+    const emergencyDisable = env.GUARDIAN_MODE === "OFF";
 
-    if (globalHits > 60) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Too many requests from your IP." }), {
-            status: 429,
-            headers: { "Content-Type": "application/json" }
-        });
+    if (!emergencyDisable && ip !== adminIp) {
+        try {
+            // 1. Check if IP is explicitly blocked
+            const isBlocked = await env.GUARDIAN_KV?.get(`block:${ip}`);
+            if (isBlocked) {
+                return new Response(JSON.stringify({
+                    error: "Your IP has been temporarily flagged for suspicious activity. (Guardian Block)",
+                    expiry: "1 Hour"
+                }), { status: 403, headers: { "Content-Type": "application/json" } });
+            }
+
+            // 2. High-Performance Rate Limiting (Using KV)
+            const kvKey = `hits:${ip}:${Math.floor(now / 60000)}`; // Per minute bucket
+            const hits = (parseInt(await env.GUARDIAN_KV?.get(kvKey)) || 0) + 1;
+
+            await env.GUARDIAN_KV?.put(kvKey, hits.toString(), { expirationTtl: 120 });
+
+            // Threshold: 100 requests per minute
+            if (hits > 100) {
+                await env.GUARDIAN_KV?.put(`block:${ip}`, "true", { expirationTtl: 3600 }); // Block for 1 hour
+
+                // 📝 Log the block event in D1 for audit
+                await env.DB.prepare("INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)")
+                    .bind(crypto.randomUUID(), "SYSTEM", "guardian_block", JSON.stringify({ ip, hits }), new Date().toISOString()).run();
+
+                return new Response(JSON.stringify({ error: "Guardian: Attack detected. IP blocked for 1 hour." }), { status: 403 });
+            }
+        } catch (e) {
+            console.error("Guardian KV Error:", e.message);
+            // Fail-open: if KV fails, don't crash the site
+        }
     }
 
     const response = await next();
