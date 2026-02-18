@@ -41,6 +41,10 @@ export async function onRequestPost({ request, env }) {
         const currentHash = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
 
         if (currentHash !== user.password_hash) {
+            // 📝 LOG FAILURE for Sentinel
+            await env.DB.prepare("INSERT INTO logs (id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)")
+                .bind(crypto.randomUUID(), user.id, 'login_fail', JSON.stringify({ ip: request.headers.get("cf-connecting-ip") || "unknown" }), new Date().toISOString()).run();
+
             return new Response(JSON.stringify({ error: "Invalid username or password." }), {
                 status: 401,
                 headers: { "Content-Type": "application/json" }
