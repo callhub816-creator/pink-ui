@@ -34,7 +34,8 @@ export async function onRequestGet({ request, env }) {
 
         // Verify Signature
         const encoder = new TextEncoder();
-        const secret = env.JWT_SECRET || "default_hush_hush_secret";
+        const secret = env.JWT_SECRET;
+        if (!secret) throw new Error("JWT_SECRET missing");
         const key = await crypto.subtle.importKey(
             "raw",
             encoder.encode(secret),

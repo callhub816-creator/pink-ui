@@ -90,12 +90,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ persona, onBack, onStartCall, i
     setIsTyping(true);
 
     try {
-      const token = localStorage.getItem('auth_token');
       const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           message: text,

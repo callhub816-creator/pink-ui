@@ -179,7 +179,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    localStorage.removeItem('auth_token');
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) { }
     setUser(null);
     storage.clearAllHistories();
     window.location.href = '/login';
